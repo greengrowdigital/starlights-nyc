@@ -1,6 +1,7 @@
 import { ArrowUp, Instagram, Mail, MessageSquare, Phone } from 'lucide-react';
 import { Container } from '../components/Section';
-import Reveal from '../components/Reveal';
+import Reveal, { RevealGroup, RevealItem } from '../components/Reveal';
+import MaskText from '../components/MaskText';
 import Starfield from '../components/Starfield';
 import { CONTACT, SITE } from '../config';
 import { useLang } from '../i18n/LanguageContext';
@@ -41,15 +42,17 @@ export default function Footer() {
       </div>
 
       <Container>
-        <Reveal>
-          <h2 className="type-hero t-fg max-w-[16ch] text-balance">{t.footer.title}</h2>
-        </Reveal>
+        <MaskText
+          as="h2"
+          text={t.footer.title}
+          className="type-hero t-fg max-w-[16ch]"
+          amount={0.4}
+        />
 
-        <Reveal delay={0.08}>
-          <div className="mt-12 grid gap-px sm:grid-cols-2 lg:grid-cols-4">
-            {doors.map((door) => (
+        <RevealGroup className="mt-12 grid gap-px sm:grid-cols-2 lg:grid-cols-4" stagger={0.08} delay={0.2}>
+          {doors.map((door) => (
+            <RevealItem key={door.label}>
               <a
-                key={door.label}
                 href={door.href}
                 target={door.external ? '_blank' : undefined}
                 rel={door.external ? 'noreferrer' : undefined}
@@ -63,9 +66,9 @@ export default function Footer() {
                 <span className="label-mono t-fg-faint">{door.label}</span>
                 <span className="t-fg text-[1.0625rem] tracking-tight">{door.value}</span>
               </a>
-            ))}
-          </div>
-        </Reveal>
+            </RevealItem>
+          ))}
+        </RevealGroup>
 
         <Reveal delay={0.12}>
           <div className="mt-14 flex flex-wrap items-center gap-x-6 gap-y-2">

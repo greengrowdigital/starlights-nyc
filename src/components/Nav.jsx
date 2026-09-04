@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { useLang } from '../i18n/LanguageContext';
+import { lockScroll, unlockScroll } from '../lib/scroll';
 
 const LINKS = [
   { href: '#ceiling', key: 'ceiling' },
@@ -20,6 +21,7 @@ export default function Nav() {
   const { t, lang, toggle } = useLang();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [activeId, setActiveId] = useState('');
   const triggerRef = useRef(null);
   const dialogRef = useRef(null);
 
@@ -56,6 +58,7 @@ export default function Nav() {
 
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    lockScroll();
     const opener = triggerRef.current;
 
     const focusables = () =>
@@ -94,10 +97,35 @@ export default function Nav() {
     window.addEventListener('keydown', onKey);
     return () => {
       document.body.style.overflow = previous;
+      unlockScroll();
       window.removeEventListener('keydown', onKey);
       opener?.focus();
     };
   }, [open, t.nav.close]);
+
+  /**
+   * Which section is under the reader. Drives the sliding underline in the
+   * desktop nav — a small thing, but on a page that is one long scroll it is
+   * the only "you are here" the visitor ever gets besides the progress hair.
+   */
+  useEffect(() => {
+    const ids = LINKS.map((l) => l.href.slice(1));
+    const nodes = ids.map((id) => document.getElementById(id)).filter(Boolean);
+    if (!nodes.length) return undefined;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        // Prefer the entry closest to the top of the viewport that is visible.
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible.length) setActiveId(visible[0].target.id);
+      },
+      { rootMargin: '-35% 0px -55% 0px', threshold: 0 },
+    );
+    nodes.forEach((n) => io.observe(n));
+    return () => io.disconnect();
+  }, []);
 
   return (
     <>
@@ -130,17 +158,30 @@ export default function Nav() {
           </a>
 
           <ul className="hidden items-center gap-8 lg:flex">
-            {LINKS.map((link) => (
-              <li key={link.href}>
-                <a
-                  href={link.href}
-                  className="t-fg-strong hover:t-fg text-[0.82rem] transition-colors duration-300"
-                  style={{ transition: 'color 0.3s var(--ease-lux)' }}
-                >
-                  {t.nav[link.key]}
-                </a>
-              </li>
-            ))}
+            {LINKS.map((link) => {
+              const current = activeId === link.href.slice(1);
+              return (
+                <li key={link.href} className="relative">
+                  <a
+                    href={link.href}
+                    aria-current={current ? 'location' : undefined}
+                    className={`${current ? 't-fg' : 't-fg-strong hover:t-fg'} block py-2 text-[0.82rem]`}
+                    style={{ transition: 'color 0.3s var(--ease-lux)' }}
+                  >
+                    {t.nav[link.key]}
+                  </a>
+                  {current && (
+                    <motion.span
+                      layoutId="nav-active"
+                      aria-hidden="true"
+                      className="absolute inset-x-0 -bottom-0.5 h-px"
+                      style={{ backgroundColor: 'rgb(var(--fg) / 0.8)' }}
+                      transition={{ type: 'spring', stiffness: 380, damping: 34 }}
+                    />
+                  )}
+                </li>
+              );
+            })}
           </ul>
 
           <div className="flex items-center gap-2 sm:gap-3">

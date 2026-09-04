@@ -71,8 +71,10 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* No CSS smooth-scroll: Lenis (src/components/SmoothScroll.jsx) owns the
+     easing, and the two would fight over every anchor jump. */
   html {
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -280,16 +282,33 @@
   }
 
   /* ---- Atmosphere ---- */
-  /* Film grain. Sits above the background, below content, never intercepts. */
+  /* Film grain. Sits above the background, below content, never intercepts.
+     Plain alpha, not a blend mode: several of these sit over a canvas that
+     repaints every frame, and a blend layer there makes the compositor
+     re-rasterise the whole area each frame. At this opacity the two look the
+     same on black; on white, plain alpha is if anything the truer film look. */
   .grain::after {
     content: '';
     position: absolute;
     inset: 0;
     z-index: 1;
     pointer-events: none;
-    opacity: 0.05;
-    mix-blend-mode: overlay;
+    opacity: 0.04;
     background-image: var(--grain-url);
+  }
+
+  /* The pinned ceiling scene. On landscape phones the 100svh scene cannot hold
+     the preview and three kits, so the pin is released and it flows normally. */
+  @media (max-height: 540px) {
+    .pin-track {
+      height: auto !important;
+    }
+    .pin-scene {
+      position: relative;
+      height: auto;
+      min-height: 100svh;
+      padding-bottom: 3rem;
+    }
   }
 
   /* Soft halo used behind lit objects on the dark pole. */
@@ -393,9 +412,6 @@
    Reduced motion — kill the loops, keep the page fully legible and usable.
    ========================================================================= */
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
   *,
   *::before,
   *::after {

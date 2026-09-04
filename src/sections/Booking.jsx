@@ -20,6 +20,7 @@ import {
   totalFor,
 } from '../lib/booking';
 import { dateKey, longDate, money, monthLabel, sameDay, weekdayInitials } from '../lib/format';
+import { scrollToEl } from '../lib/scroll';
 
 const KIT_IDS = STAR_KITS.map((k) => k.id);
 const VEHICLE_IDS = HEADLINER.map((v) => v.id);
@@ -51,6 +52,9 @@ export default function Booking() {
   const [status, setStatus] = useState('idle'); // idle | sending | done
   const [sent, setSent] = useState(null);
   const [delivered, setDelivered] = useState(false);
+  // +1 going forward, -1 going back: the next step slides in from the side you
+  // are heading toward, so the flow keeps a sense of place.
+  const [dir, setDir] = useState(1);
 
   const stepRef = useRef(null);
   const total = useMemo(() => totalFor(services), [services]);
@@ -77,11 +81,13 @@ export default function Booking() {
 
   const goNext = () => {
     if (!validateStep()) return;
+    setDir(1);
     setStep((current) => Math.min(current + 1, 2));
   };
 
   const goBack = () => {
     setErrors({});
+    setDir(-1);
     setStep((current) => Math.max(current - 1, 0));
   };
 
@@ -110,14 +116,7 @@ export default function Booking() {
     // the document shrinks under a scroll position that does not move — leaving
     // the customer looking at the footer, with no idea whether anything
     // happened. Put the confirmation back in front of them.
-    window.requestAnimationFrame(() => {
-      const panel = document.getElementById('book');
-      if (!panel) return;
-      const reducedMotion =
-        typeof window.matchMedia === 'function' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      panel.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
-    });
+    window.requestAnimationFrame(() => scrollToEl('#book', { block: 'center' }));
   };
 
   const reset = () => {
@@ -162,13 +161,19 @@ export default function Booking() {
             </p>
 
             <div ref={stepRef} tabIndex={-1} className="p-6 outline-none sm:p-9">
-              <AnimatePresence mode="wait" initial={false}>
+              <AnimatePresence mode="wait" initial={false} custom={dir}>
                 <motion.div
                   key={step}
-                  initial={reduced ? false : { opacity: 0, x: 24 }}
-                  animate={reduced ? {} : { opacity: 1, x: 0 }}
-                  exit={reduced ? {} : { opacity: 0, x: -24 }}
-                  transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                  custom={dir}
+                  variants={{
+                    enter: (d) => (reduced ? {} : { opacity: 0, x: 28 * d }),
+                    center: { opacity: 1, x: 0 },
+                    exit: (d) => (reduced ? {} : { opacity: 0, x: -28 * d }),
+                  }}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
                 >
                   {step === 0 && (
                     <ServiceStep selected={services} onToggle={toggle} error={errors.services} />
@@ -275,7 +280,17 @@ export default function Booking() {
 
 function Stepper({ step, labels }) {
   return (
-    <ol className="t-line flex border-b" role="list">
+    <ol className="t-line relative flex border-b" role="list">
+      {/* Progress hair along the bottom edge: fills to the current step, so the
+          stepper also reads as a bar without adding one. */}
+      <motion.span
+        aria-hidden="true"
+        className="absolute inset-x-0 -bottom-px h-px origin-left"
+        style={{ backgroundColor: 'rgb(var(--fg) / 0.7)' }}
+        initial={false}
+        animate={{ scaleX: (step + 1) / labels.length }}
+        transition={{ type: 'spring', stiffness: 160, damping: 26 }}
+      />
       {labels.map((label, i) => {
         const active = i === step;
         const done = i < step;

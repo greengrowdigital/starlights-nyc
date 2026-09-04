@@ -1,4 +1,5 @@
 import Reveal from './Reveal';
+import MaskText from './MaskText';
 
 /**
  * Every act of the scroll is a <Section>. It owns three things:
@@ -62,17 +63,13 @@ export function SectionHead({
       )}
 
       {title && (
-        <Reveal delay={0.06}>
-          <h2 className="type-display t-fg mt-6 text-balance">
-            {title}
-            {italic && (
-              <>
-                {' '}
-                <span className="ital">{italic}</span>
-              </>
-            )}
-          </h2>
-        </Reveal>
+        <MaskText
+          as="h2"
+          text={title}
+          italic={italic}
+          delay={0.08}
+          className={`type-display t-fg mt-6 ${centered ? 'justify-center' : ''}`}
+        />
       )}
 
       {lead && (

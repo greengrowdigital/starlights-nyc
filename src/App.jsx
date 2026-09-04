@@ -5,6 +5,7 @@ import { ScrollThemeProvider } from './hooks/useScrollTheme';
 import Loader from './components/Loader';
 import Nav from './components/Nav';
 import ScrollProgress from './components/ScrollProgress';
+import SmoothScroll from './components/SmoothScroll';
 
 import Hero from './sections/Hero';
 import Manifesto from './sections/Manifesto';
@@ -41,6 +42,7 @@ export default function App() {
     <LanguageProvider>
       <BookingProvider>
         <ScrollThemeProvider>
+          <SmoothScroll />
           <Loader />
           <ScrollProgress />
           <Nav />

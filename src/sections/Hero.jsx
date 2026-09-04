@@ -1,5 +1,11 @@
-import { useRef } from 'react';
-import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
+import {
+  motion,
+  useMotionTemplate,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from 'framer-motion';
 import Starfield from '../components/Starfield';
 import { Container } from '../components/Section';
 import { useLang } from '../i18n/LanguageContext';
@@ -26,8 +32,25 @@ export default function Hero() {
   // The sky drifts a little slower than the copy: the ceiling stays with you
   // for a beat while the words leave. Disabled entirely for reduced motion.
   const skyY = useTransform(scrollYProgress, [0, 1], ['0%', reduced ? '0%' : '16%']);
-  const contentY = useTransform(scrollYProgress, [0, 1], ['0%', reduced ? '0%' : '-14%']);
-  const contentOpacity = useTransform(scrollYProgress, [0, 0.65], [1, reduced ? 1 : 0]);
+  const contentY = useTransform(scrollYProgress, [0, 1], ['0%', reduced ? '0%' : '-10%']);
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.6], [1, reduced ? 1 : 0]);
+
+  // Zoom-through. As the reader scrolls off the hero the headline grows toward
+  // them and softens, so leaving the sky feels like moving *through* it rather
+  // than past it. The blur is a filter on a viewport-sized block of display
+  // type — cheap on a laptop GPU, not on a phone — so it is desktop-only and
+  // the phone keeps just the scale.
+  const contentScale = useTransform(scrollYProgress, [0, 0.7], [1, reduced ? 1 : 1.3]);
+  const blurPx = useTransform(scrollYProgress, [0.08, 0.6], [0, reduced ? 0 : 12]);
+  const blurFilter = useMotionTemplate`blur(${blurPx}px)`;
+  const [desktop, setDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px) and (hover: hover)');
+    const update = () => setDesktop(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
   // The hero paints its own black plate instead of borrowing the body's. The
   // background morph starts turning the page white while the hero's last third
   // is still on screen, and a starfield over grey looks like a bug — so the
@@ -84,7 +107,14 @@ export default function Hero() {
         <div className="grain pointer-events-none absolute inset-0" />
       </motion.div>
 
-      <motion.div style={{ y: contentY, opacity: contentOpacity }}>
+      <motion.div
+        style={{
+          y: contentY,
+          opacity: contentOpacity,
+          scale: contentScale,
+          filter: desktop ? blurFilter : undefined,
+        }}
+      >
         <Container className="flex flex-col items-center text-center">
           {/* The eyebrow is set in mono with 0.24em tracking, and `ch` units do
               not account for tracking — a max-w in ch measured far narrower

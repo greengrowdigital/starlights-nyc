@@ -185,12 +185,40 @@ The **logo** goes in `public/` and replaces the `StarMark` SVG in
 
 ---
 
+## Motion
+
+The page scrolls with inertia (**Lenis**, `src/components/SmoothScroll.jsx`):
+the wheel glides to a stop instead of snapping. Touch stays native. Every
+programmatic scroll — nav anchors, "Book this ceiling", the confirmation
+screen — goes through `src/lib/scroll.js`, so it eases the same way and falls
+back to native `scrollIntoView` when Lenis is absent.
+
+What moves, and why:
+
+| Where | What happens | Driven by |
+|---|---|---|
+| Hero | Headline grows and softens as you leave the sky (zoom-through) | scroll |
+| Manifesto | The sentence is *written* word by word, and un-written scrolling back | scroll |
+| **Ceiling** | The section **pins** for three screens while the fiber fills 550 → 800 → 1,100 and the matching kit lights. Tapping a kit jumps to its beat | scroll |
+| Headliner | The car **draws itself** on first sight, then **morphs** between coupe / sedan / SUV; a ticked pillar traces its stroke in | in-view + state |
+| Flow Series | A tracer runs the new colour down the dash, then the doors catch, then the footwells | state |
+| Gallery | Frames grow into place; the vertical one drifts against the scroll | scroll |
+| Booking | Steps slide in the direction you are heading; the stepper fills | state |
+| Nav | A hairline slides between links to mark the section under you | IntersectionObserver |
+| Every title | Words rise out of a mask — one entrance for the whole site | in-view |
+
+The pinned ceiling runs on Framer MotionValues read directly by the canvas and
+by a `motion.span`, so the whole sequence plays **without a single React
+render**. Under `max-height: 540px` (landscape phones) the pin is released and
+the scene flows normally.
+
 ## Accessibility & motion
 
 - Every colour is derived from `--fg`, so contrast holds on both poles of the scroll.
-- `prefers-reduced-motion` is honoured throughout: the loader is skipped, the
-  starfield renders one static frame and never starts a loop, scroll-linked
-  reveals are disabled, and smooth scrolling is turned off.
+- `prefers-reduced-motion` is honoured throughout: Lenis is not mounted, the
+  loader is skipped, the starfield renders one static frame and never starts a
+  loop, every entrance renders in its final state, and the scroll-linked
+  effects collapse to their resting values.
 - The starfield loop is stopped by an `IntersectionObserver` whenever its canvas
   leaves the viewport.
 

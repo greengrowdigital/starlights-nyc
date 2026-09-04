@@ -58,6 +58,7 @@ function pickSpriteIndex(r) {
 
 export default function Starfield({
   density = 500,
+  densityValue = null,
   shooting = 0,
   className = '',
   brightness = 1,
@@ -66,10 +67,17 @@ export default function Starfield({
   const canvasRef = useRef(null);
   const starsRef = useRef([]);
   const targetRef = useRef(density);
+  const valueRef = useRef(densityValue);
 
-  // Keep the loop reading a ref so changing density never remounts the canvas —
+  // Keep the loop reading refs so changing density never remounts the canvas —
   // the sky grows and thins in place when you pick a different kit.
+  //
+  // `densityValue` is an optional Framer MotionValue. When it is supplied the
+  // loop reads it directly every frame, which is how the pinned ceiling is
+  // driven by the scroll without a single React re-render: the number changes
+  // sixty times a second and nothing above this canvas notices.
   targetRef.current = density;
+  valueRef.current = densityValue;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -108,7 +116,12 @@ export default function Starfield({
       phase: rand() * Math.PI * 2,
       speed: 0.25 + rand() * 0.9,
       sprite: pickSpriteIndex(rand()),
+      // When this point first became visible. Stars that join the ceiling as
+      // the density rises fade on over ~0.7s instead of popping, which is what
+      // fiber actually does when the illuminator warms up.
+      born: -1,
     });
+    let lastCount = 0;
 
     /**
      * Grow the pool to the largest density ever asked for, and let `draw` render
@@ -121,10 +134,18 @@ export default function Starfield({
      * the same sky.
      */
     const sync = () => {
-      const want = targetRef.current;
+      const raw = valueRef.current ? valueRef.current.get() : targetRef.current;
+      const want = Math.max(0, Math.round(raw));
       const stars = starsRef.current;
       for (let i = stars.length; i < want; i += 1) stars.push(makeStar());
-      return Math.min(want, stars.length);
+      const count = Math.min(want, stars.length);
+      // Points that just went dark forget their birth, so they fade back on
+      // rather than reappearing at full brightness when the density climbs.
+      if (count < lastCount) {
+        for (let i = count; i < lastCount && i < stars.length; i += 1) stars[i].born = -1;
+      }
+      lastCount = count;
+      return count;
     };
 
     const resize = () => {
@@ -185,10 +206,12 @@ export default function Starfield({
 
       for (let i = 0; i < count; i += 1) {
         const star = stars[i];
+        if (star.born < 0) star.born = elapsed;
+        const warm = reduced ? 1 : Math.min(1, (elapsed - star.born) / 0.7);
         const twinkle = reduced
           ? star.base
           : star.base * (0.55 + 0.45 * Math.sin(elapsed * star.speed + star.phase));
-        const alpha = Math.max(0, Math.min(1, twinkle * brightness));
+        const alpha = Math.max(0, Math.min(1, twinkle * brightness * warm));
         if (alpha < 0.015) continue;
         const size = star.r * 6;
         ctx.globalAlpha = alpha;

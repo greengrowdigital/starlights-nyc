@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import Section, { SectionHead } from '../components/Section';
 import Reveal, { RevealGroup, RevealItem } from '../components/Reveal';
+import ScrollScale from '../components/ScrollScale';
 import { FLOW, FLOW_INCLUDES } from '../data/services';
 import { useLang } from '../i18n/LanguageContext';
 import { useBooking } from '../hooks/useBooking';
@@ -34,6 +35,7 @@ const SPECTRUM =
 export default function FlowSeries() {
   const { t, s, lang } = useLang();
   const { requestBooking } = useBooking();
+  const reduced = useReducedMotion();
   const [swatch, setSwatch] = useState(SWATCHES[0]);
 
   const isFlow = swatch.color === null;
@@ -44,6 +46,19 @@ export default function FlowSeries() {
   const lightStyle = isFlow
     ? { backgroundImage: SPECTRUM, boxShadow: `0 0 46px 10px rgb(120 140 255 / 0.4)` }
     : { backgroundColor: glow, boxShadow: `0 0 46px 10px ${glow}66` };
+
+  // Power-on sequence. Real ambient kits do not switch colour instantly — the
+  // controller runs the new colour down the dash strip, then the doors catch,
+  // then the footwells. Keying on the swatch id restarts the sequence on every
+  // tap, and `powerOn(delay)` is what each zone plays when it catches.
+  const powerOn = (delay) =>
+    reduced
+      ? {}
+      : {
+          initial: { opacity: 0.25 },
+          animate: { opacity: 1 },
+          transition: { duration: 0.55, delay, ease: [0.16, 1, 0.3, 1] },
+        };
 
   return (
     <Section id="flow" theme="dark">
@@ -56,7 +71,7 @@ export default function FlowSeries() {
       />
 
       {/* ---- The cabin ---- */}
-      <Reveal delay={0.1} className="mt-[clamp(2.5rem,6vh,4rem)]">
+      <ScrollScale className="mt-[clamp(2.5rem,6vh,4rem)]">
         <div
           className="t-line relative overflow-hidden rounded-[var(--radius-hero)] border bg-black"
           style={{ aspectRatio: '16 / 9' }}
@@ -65,23 +80,62 @@ export default function FlowSeries() {
 
           {/* Dash — the long horizontal run across the top. */}
           <motion.div
-            className={`absolute left-[8%] right-[8%] top-[24%] h-[3px] rounded-full transition-all duration-500 ${isFlow ? 'animate-flow' : ''}`}
+            key={`dash-${swatch.id}`}
+            className={`absolute left-[8%] right-[8%] top-[24%] h-[3px] rounded-full ${isFlow ? 'animate-flow' : ''}`}
             style={lightStyle}
+            {...powerOn(0)}
           />
+
+          {/* The tracer: a bright head that runs the new colour down the dash
+              before the strip settles — the tell that this is a system, not
+              a paint job. */}
+          {!reduced && (
+            <motion.span
+              key={`tracer-${swatch.id}`}
+              aria-hidden="true"
+              className="absolute top-[24%] h-[3px] w-[9%] -translate-y-px rounded-full"
+              style={{
+                background: isFlow
+                  ? 'linear-gradient(90deg, transparent, #fff)'
+                  : `linear-gradient(90deg, transparent, #fff)`,
+                boxShadow: `0 0 18px 4px ${isFlow ? '#ffffff' : glow}`,
+                mixBlendMode: 'screen',
+              }}
+              initial={{ left: '-2%', opacity: 0 }}
+              animate={{ left: ['-2%', '92%'], opacity: [0, 1, 1, 0] }}
+              transition={{ duration: 0.95, ease: [0.4, 0, 0.2, 1] }}
+            />
+          )}
 
           {/* Doors — two raking runs down the sides. */}
           <motion.div
+            key={`door-l-${swatch.id}`}
             className={`absolute bottom-[26%] left-[6%] h-[3px] w-[26%] origin-left rotate-[14deg] rounded-full ${isFlow ? 'animate-flow' : ''}`}
             style={lightStyle}
+            {...powerOn(0.55)}
           />
           <motion.div
+            key={`door-r-${swatch.id}`}
             className={`absolute bottom-[26%] right-[6%] h-[3px] w-[26%] origin-right -rotate-[14deg] rounded-full ${isFlow ? 'animate-flow' : ''}`}
             style={lightStyle}
+            {...powerOn(0.55)}
           />
 
-          {/* Footwells — pooled light, not a line. */}
-          <FootPool className="bottom-[10%] left-[22%]" color={glow} isFlow={isFlow} />
-          <FootPool className="bottom-[10%] right-[22%]" color={glow} isFlow={isFlow} />
+          {/* Footwells — pooled light, not a line. Last to catch. */}
+          <FootPool
+            key={`pool-l-${swatch.id}`}
+            className="bottom-[10%] left-[22%]"
+            color={glow}
+            isFlow={isFlow}
+            {...powerOn(0.85)}
+          />
+          <FootPool
+            key={`pool-r-${swatch.id}`}
+            className="bottom-[10%] right-[22%]"
+            color={glow}
+            isFlow={isFlow}
+            {...powerOn(0.85)}
+          />
 
           {/* Windshield line, so the abstraction still reads as a cabin. */}
           <svg
@@ -97,11 +151,17 @@ export default function FlowSeries() {
             <path d="M148 225 L172 96 L228 96 L252 225" stroke="rgb(255 255 255 / 0.06)" />
           </svg>
 
-          <span className="label-mono absolute bottom-4 left-5 text-white/60 sm:bottom-6 sm:left-8">
+          <motion.span
+            key={`label-${swatch.id}`}
+            className="label-mono absolute bottom-4 left-5 text-white/60 sm:bottom-6 sm:left-8"
+            initial={reduced ? false : { opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+          >
             {t.flow.colors[swatch.id]}
-          </span>
+          </motion.span>
         </div>
-      </Reveal>
+      </ScrollScale>
 
       {/* ---- Swatches ---- */}
       <Reveal delay={0.14}>
@@ -193,10 +253,11 @@ export default function FlowSeries() {
   );
 }
 
-function FootPool({ className, color, isFlow }) {
+function FootPool({ className, color, isFlow, ...motionProps }) {
   return (
-    <span
-      className={`absolute h-[14%] w-[18%] rounded-[50%] blur-[10px] transition-all duration-500 ${className}`}
+    <motion.span
+      {...motionProps}
+      className={`absolute h-[14%] w-[18%] rounded-[50%] blur-[10px] ${className}`}
       style={{
         // In Flow mode the strips are already cycling the full spectrum, so the
         // pools go neutral white — a fixed blue pool under a rainbow dash reads

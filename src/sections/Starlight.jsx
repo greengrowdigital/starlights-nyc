@@ -1,205 +1,265 @@
-import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import Section, { SectionHead } from '../components/Section';
-import Reveal, { RevealGroup, RevealItem } from '../components/Reveal';
+import { useRef, useState } from 'react';
+import {
+  motion,
+  useMotionValueEvent,
+  useReducedMotion,
+  useScroll,
+  useSpring,
+  useTransform,
+} from 'framer-motion';
+import { Container } from '../components/Section';
+import Reveal from '../components/Reveal';
+import MaskText from '../components/MaskText';
 import Starfield from '../components/Starfield';
 import { STAR_KITS } from '../data/services';
 import { useLang } from '../i18n/LanguageContext';
 import { useBooking } from '../hooks/useBooking';
 import { money, number } from '../lib/format';
+import { scrollToY } from '../lib/scroll';
 
 const KIT_IDS = STAR_KITS.map((k) => k.id);
 
 /**
- * Act three: the configurator disguised as a product page.
+ * How much page the pinned scene owns. The viewport pins for (TRACK - 1)
+ * screens, which is the distance the customer scrolls while the ceiling fills.
+ * Three and a half screens gives each kit a comfortable beat without the pin
+ * overstaying its welcome.
+ */
+const TRACK_VH = 340;
+
+/**
+ * Where each kit lives on the pinned scroll (0..1), and the short ramps between
+ * them. The flat plateaus are where the number rests on a card's exact figure;
+ * the ramps are where the ceiling visibly fills. Segment boundaries for the
+ * active card sit in the middle of each ramp.
+ */
+const STOPS = [0, 0.3, 0.4, 0.63, 0.73, 1];
+const DENSITIES = [
+  STAR_KITS[0].stars,
+  STAR_KITS[0].stars,
+  STAR_KITS[1].stars,
+  STAR_KITS[1].stars,
+  STAR_KITS[2].stars,
+  STAR_KITS[2].stars,
+];
+const SEGMENTS = [
+  [0, 0.35],
+  [0.35, 0.68],
+  [0.68, 1],
+];
+
+/**
+ * Act three: the ceiling, driven by the scroll.
  *
- * The number on the price card and the number of points in the preview are the
- * same number. Choosing 1,100 stars does not swap a photo — it fills the
- * ceiling above the cards, live, while you watch. That is the entire argument
- * for the more expensive kit, and no copy has to make it.
+ * The section pins for three screens. As the customer scrolls, the fiber fills
+ * in from 550 to 800 to 1,100 points, the number on the plate ticks up, and the
+ * matching kit card lights. Nothing is clicked; the scroll *is* the comparison.
+ * A tap on a card jumps the scroll to that kit's beat, so the scene also works
+ * as a plain picker for anyone who does not want to ride it.
+ *
+ * Every per-frame value is a MotionValue read straight by the canvas and by a
+ * motion.span, so the whole sequence runs without React rendering once.
  */
 export default function Starlight() {
   const { t, s, lang } = useLang();
   const { requestBooking } = useBooking();
-  const [selected, setSelected] = useState(STAR_KITS[1].id);
+  const reduced = useReducedMotion();
+  const trackRef = useRef(null);
+  const [active, setActive] = useState(0);
 
-  const kit = STAR_KITS.find((k) => k.id === selected) || STAR_KITS[1];
-  const density = useTween(kit.stars, 900);
+  const { scrollYProgress } = useScroll({
+    target: trackRef,
+    offset: ['start start', 'end end'],
+  });
+
+  // Star count follows the scroll through the ramps above, then a gentle
+  // spring so the plate's number rolls rather than jumps.
+  const rawDensity = useTransform(scrollYProgress, STOPS, DENSITIES);
+  // Tuned so the number lands on the card's exact figure within about a second
+  // of the scroll stopping — a softer spring left it reading "799" for a beat.
+  const sprungDensity = useSpring(rawDensity, { stiffness: 95, damping: 24, mass: 0.55 });
+  const density = reduced ? rawDensity : sprungDensity;
+  const countText = useTransform(density, (v) => number(Math.round(v), lang));
+
+  // The only React state in the scene changes three times per scroll-through.
+  useMotionValueEvent(scrollYProgress, 'change', (p) => {
+    const next = p < SEGMENTS[0][1] ? 0 : p < SEGMENTS[1][1] ? 1 : 2;
+    if (next !== active) setActive(next);
+  });
+
+  const selected = STAR_KITS[active];
+
+  // Jump the pinned scroll to the middle of a kit's beat.
+  const goTo = (index) => {
+    const track = trackRef.current;
+    if (!track) return;
+    const top = track.getBoundingClientRect().top + window.scrollY;
+    const range = track.offsetHeight - window.innerHeight;
+    const [a, b] = SEGMENTS[index];
+    scrollToY(top + range * ((a + b) / 2));
+  };
 
   return (
-    <Section id="ceiling" theme="dark">
-      <SectionHead
-        index={t.starlight.index}
-        label={t.starlight.label}
-        title={t.starlight.title}
-        italic={t.starlight.titleItalic}
-        lead={t.starlight.lead}
-      />
+    <section id="ceiling" data-theme="dark" className="relative isolate">
+      {/* .pin-track / .pin-scene unpin themselves on very short landscape
+          viewports (see index.css) where a 100svh scene cannot hold the kits. */}
+      <div ref={trackRef} className="pin-track" style={{ height: `${TRACK_VH}svh` }}>
+        <div className="pin-scene sticky top-0 flex h-[100svh] flex-col justify-center overflow-hidden pt-[var(--nav-h)]">
+          <Container>
+            {/* ---- Compact header ---- */}
+            <header className="max-w-3xl">
+              <Reveal>
+                <div className="flex items-center gap-3">
+                  <span className="label-mono t-fg-faint tnum">{t.starlight.index}</span>
+                  <span className="t-surface-2 h-px w-8" aria-hidden="true" />
+                  <span className="label-mono t-fg-muted">{t.starlight.label}</span>
+                </div>
+              </Reveal>
+              <MaskText
+                as="h2"
+                text={t.starlight.title}
+                italic={t.starlight.titleItalic}
+                delay={0.06}
+                amount={0.3}
+                className="type-display t-fg mt-4"
+              />
+            </header>
 
-      {/* ---- The ceiling ---- */}
-      <Reveal delay={0.1} className="mt-[clamp(2.5rem,6vh,4rem)]">
-        <div className="relative">
-          {/* Vertical bleed only. A negative horizontal inset here reached past
-              the viewport, grew the document's scroll width, and re-centred the
-              fixed nav — its right gutter collapsed to 8px on wide screens. The
-              glow reads the same because the gradient is soft at its edges. */}
-          <div className="spot-warm pointer-events-none absolute inset-x-0 -inset-y-16 -z-10" />
+            <div className="mt-5 grid gap-4 lg:mt-7 lg:grid-cols-[1.4fr_1fr] lg:gap-8">
+              {/* ---- The ceiling ---- */}
+              <Reveal delay={0.1} amount={0.2}>
+                <div className="relative">
+                  <div className="spot-warm pointer-events-none absolute inset-x-0 -inset-y-16 -z-10" />
 
-          <div
-            className="t-line relative overflow-hidden rounded-[var(--radius-hero)] border bg-black"
-            style={{ aspectRatio: '21 / 9' }}
-          >
-            <Starfield density={Math.round(density)} shooting={0} seed={21} />
+                  <div className="t-line relative aspect-[2/1] overflow-hidden rounded-[var(--radius-hero)] border bg-black lg:aspect-[16/9]">
+                    <Starfield density={DENSITIES[0]} densityValue={density} shooting={0} seed={21} />
 
-            {/* Suede edge: the headliner the fiber sits behind. */}
-            <div
-              className="pointer-events-none absolute inset-0"
-              style={{
-                background:
-                  'radial-gradient(ellipse 86% 94% at 50% 50%, transparent 58%, rgb(0 0 0 / 0.7) 100%)',
-                boxShadow: 'inset 0 0 70px 18px rgb(0 0 0 / 0.85)',
-              }}
-            />
-            <div className="grain pointer-events-none absolute inset-0" />
+                    {/* Suede edge: the headliner the fiber sits behind. */}
+                    <div
+                      className="pointer-events-none absolute inset-0"
+                      style={{
+                        background:
+                          'radial-gradient(ellipse 86% 94% at 50% 50%, transparent 58%, rgb(0 0 0 / 0.7) 100%)',
+                        boxShadow: 'inset 0 0 70px 18px rgb(0 0 0 / 0.85)',
+                      }}
+                    />
 
-            {/* Live count, bottom-left, the way a spec plate would read. */}
-            <div className="absolute bottom-4 left-5 flex items-baseline gap-2 sm:bottom-6 sm:left-8">
-              <span className="tnum text-[1.75rem] font-semibold leading-none text-white sm:text-[2.5rem]">
-                {number(Math.round(density), lang)}
-              </span>
-              <span className="label-mono text-white/60">{t.starlight.starsLabel}</span>
+                    {/* Live count, bottom-left, the way a spec plate reads. */}
+                    <div className="absolute bottom-4 left-5 flex items-baseline gap-2 sm:bottom-6 sm:left-8">
+                      <motion.span className="tnum text-[1.75rem] font-semibold leading-none text-white sm:text-[2.5rem]">
+                        {countText}
+                      </motion.span>
+                      <span className="label-mono text-white/60">{t.starlight.starsLabel}</span>
+                    </div>
+
+                    <span className="label-mono absolute right-5 top-4 hidden text-white/60 sm:right-8 sm:top-6 sm:block">
+                      {t.starlight.previewCaption}
+                    </span>
+                  </div>
+                </div>
+              </Reveal>
+
+              {/* ---- The kits ---- */}
+              <div className="flex flex-col gap-2.5 lg:justify-center">
+                <Reveal delay={0.12} amount={0.2} className="hidden lg:block">
+                  <p className="type-lead t-fg-muted mb-3 text-pretty text-[1.05rem]">
+                    {t.starlight.lead}
+                  </p>
+                </Reveal>
+
+                {STAR_KITS.map((item, i) => (
+                  <KitCard
+                    key={item.id}
+                    item={item}
+                    copy={s(item)}
+                    lang={lang}
+                    active={i === active}
+                    progress={scrollYProgress}
+                    segment={SEGMENTS[i]}
+                    label={t.starlight.selected}
+                    installed={t.common.installed}
+                    onSelect={() => goTo(i)}
+                    delay={0.14 + i * 0.06}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        </div>
-      </Reveal>
 
-      <Reveal delay={0.15}>
-        <p className="label-mono t-fg-faint mt-4 text-center">{t.starlight.previewCaption}</p>
-      </Reveal>
-
-      {/* ---- The kits ---- */}
-      {/* Two columns before three. At the sm breakpoint a third column leaves
-          each card only ~118px of content box, which is narrower than its own
-          title-plus-badge row — the SELECTED pill painted straight through the
-          card border and the price ran into the INSTALLED label. */}
-      <RevealGroup
-        className="mt-[clamp(3rem,8vh,5rem)] grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-        stagger={0.09}
-      >
-        {STAR_KITS.map((item) => {
-          const active = item.id === selected;
-          const copy = s(item);
-          return (
-            <RevealItem key={item.id}>
-              <button
-                type="button"
-                onClick={() => setSelected(item.id)}
-                aria-pressed={active}
-                className="group relative flex h-full w-full flex-col rounded-[var(--radius-card)] border p-6 text-left transition-all duration-500 sm:p-7"
-                style={{
-                  borderColor: active ? 'rgb(var(--fg) / 0.5)' : 'rgb(var(--fg) / 0.14)',
-                  backgroundColor: active ? 'rgb(var(--fg) / 0.07)' : 'transparent',
-                }}
-              >
-                {/* min-w-0 lets the title shrink instead of forcing the row
-                    wider than the card and pushing the badge over the border. */}
-                <div className="flex items-start justify-between gap-3">
-                  <span className="type-title t-fg min-w-0">{copy.name}</span>
-                  <span
-                    className="label-mono shrink-0 rounded-full px-2.5 py-1.5 transition-opacity duration-500"
-                    style={{
-                      backgroundColor: 'rgb(var(--fg))',
-                      color: 'rgb(var(--bg))',
-                      opacity: active ? 1 : 0,
-                    }}
-                    aria-hidden={!active}
-                  >
-                    {t.starlight.selected}
-                  </span>
-                </div>
-
-                <p className="t-fg-muted mt-3 flex-1 text-[0.9375rem] leading-relaxed text-pretty">
-                  {copy.note}
+            {/* ---- Note + CTA ---- */}
+            <Reveal delay={0.2} amount={0.2}>
+              <div className="mt-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between lg:mt-6">
+                <p className="t-fg-faint hidden max-w-[52ch] text-[0.8125rem] leading-relaxed text-pretty sm:block">
+                  {t.starlight.note}
                 </p>
-
-                <div className="t-line mt-6 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t pt-5">
-                  <span className="tnum type-title t-fg">{money(item.price, lang)}</span>
-                  <span className="label-mono t-fg-faint">{t.common.installed}</span>
-                </div>
-
-                {/* Underline that draws in on hover — the only hover flourish
-                    in the section, so it still means something. */}
-                <motion.span
-                  aria-hidden="true"
-                  className="absolute inset-x-6 bottom-0 h-px origin-left"
-                  style={{ backgroundColor: 'rgb(var(--fg) / 0.4)' }}
-                  initial={false}
-                  animate={{ scaleX: active ? 1 : 0 }}
-                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                />
-              </button>
-            </RevealItem>
-          );
-        })}
-      </RevealGroup>
-
-      <Reveal delay={0.1}>
-        <div className="mt-10 flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="t-fg-faint max-w-[46ch] text-[0.875rem] leading-relaxed text-pretty">
-            {t.starlight.note}
-          </p>
-          <button
-            type="button"
-            onClick={() => requestBooking([selected], KIT_IDS)}
-            className="btn-invert w-full shrink-0 rounded-full px-7 py-3.5 text-[0.9rem] font-medium sm:w-auto"
-          >
-            {t.starlight.cta}
-          </button>
+                <button
+                  type="button"
+                  onClick={() => requestBooking([selected.id], KIT_IDS)}
+                  className="btn-invert w-full shrink-0 rounded-full px-7 py-3.5 text-[0.9rem] font-medium sm:w-auto"
+                >
+                  {t.starlight.cta}
+                </button>
+              </div>
+            </Reveal>
+          </Container>
         </div>
-      </Reveal>
-    </Section>
+      </div>
+    </section>
   );
 }
 
 /**
- * Eases a number toward a target instead of snapping to it, so the ceiling
- * fills in rather than flickering to a new state. Respects reduced motion by
- * jumping straight to the value.
+ * One kit. Its bottom edge carries a hairline that fills across exactly the
+ * stretch of scroll this kit owns — a progress bar for its beat — so the
+ * customer can feel how far into the sequence they are without a rail.
  */
-function useTween(target, duration = 800) {
-  const [value, setValue] = useState(target);
-  const fromRef = useRef(target);
-  const startRef = useRef(0);
-  const rafRef = useRef(0);
+function KitCard({ item, copy, lang, active, progress, segment, label, installed, onSelect, delay }) {
+  const fill = useTransform(progress, segment, [0, 1]);
 
-  useEffect(() => {
-    const reduced =
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  return (
+    <Reveal delay={delay} amount={0.2} y={18}>
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-pressed={active}
+        className="group relative flex w-full items-center justify-between gap-4 overflow-hidden rounded-[var(--radius-card)] border px-5 py-3.5 text-left transition-all duration-500 lg:py-4"
+        style={{
+          borderColor: active ? 'rgb(var(--fg) / 0.5)' : 'rgb(var(--fg) / 0.14)',
+          backgroundColor: active ? 'rgb(var(--fg) / 0.07)' : 'transparent',
+        }}
+      >
+        <span className="min-w-0">
+          <span className="flex items-center gap-2.5">
+            <span className="type-title t-fg text-[1.15rem] lg:text-[1.3rem]">{copy.name}</span>
+            <span
+              className="label-mono shrink-0 rounded-full px-2 py-1 text-[0.58rem] transition-opacity duration-500"
+              style={{
+                backgroundColor: 'rgb(var(--fg))',
+                color: 'rgb(var(--bg))',
+                opacity: active ? 1 : 0,
+              }}
+              aria-hidden={!active}
+            >
+              {label}
+            </span>
+          </span>
+          <span className="t-fg-muted mt-1 hidden text-[0.8125rem] leading-snug text-pretty md:block">
+            {copy.note}
+          </span>
+        </span>
 
-    if (reduced) {
-      fromRef.current = target;
-      setValue(target);
-      return undefined;
-    }
+        <span className="flex shrink-0 flex-col items-end">
+          <span className="tnum t-fg text-[1.15rem] font-semibold leading-none lg:text-[1.3rem]">
+            {money(item.price, lang)}
+          </span>
+          <span className="label-mono t-fg-faint mt-1.5 text-[0.58rem]">{installed}</span>
+        </span>
 
-    fromRef.current = value;
-    startRef.current = performance.now();
-
-    const step = (now) => {
-      const t = Math.min((now - startRef.current) / duration, 1);
-      // Expo-out: fast commitment, soft landing — the same curve as the CSS.
-      const eased = 1 - Math.pow(1 - t, 3);
-      setValue(fromRef.current + (target - fromRef.current) * eased);
-      if (t < 1) rafRef.current = window.requestAnimationFrame(step);
-    };
-
-    rafRef.current = window.requestAnimationFrame(step);
-    return () => window.cancelAnimationFrame(rafRef.current);
-    // `value` is intentionally not a dependency: it is the animation's start
-    // point, read once per target change, never a trigger.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [target, duration]);
-
-  return value;
+        <motion.span
+          aria-hidden="true"
+          className="absolute inset-x-0 bottom-0 h-px origin-left"
+          style={{ backgroundColor: 'rgb(var(--fg) / 0.55)', scaleX: fill }}
+        />
+      </button>
+    </Reveal>
+  );
 }

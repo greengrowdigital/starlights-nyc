@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { scrollToEl } from '../lib/scroll';
 
 /**
  * The cart is shared, not local to the booking section.
@@ -48,13 +49,7 @@ export function BookingProvider({ children }) {
       return Array.from(new Set([...kept, ...wanted]));
     });
 
-    const target = document.getElementById('book');
-    if (target) {
-      const reduced =
-        typeof window.matchMedia === 'function' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
-    }
+    scrollToEl('#book');
   }, []);
 
   const value = useMemo(

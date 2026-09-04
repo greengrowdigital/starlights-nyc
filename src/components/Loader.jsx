@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { lockScroll, unlockScroll } from '../lib/scroll';
 
 /**
  * Page reveal. A short black curtain with the wordmark, then it lifts to
@@ -21,10 +22,12 @@ export default function Loader() {
     if (reduced || done) return undefined;
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    lockScroll();
     const timer = window.setTimeout(() => setDone(true), 1350);
     return () => {
       window.clearTimeout(timer);
       document.body.style.overflow = previous;
+      unlockScroll();
     };
   }, [reduced, done]);
 

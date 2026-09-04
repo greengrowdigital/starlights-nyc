@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import Section, { SectionHead } from '../components/Section';
 import Reveal, { RevealGroup, RevealItem } from '../components/Reveal';
 import Placeholder from '../components/Placeholder';
+import ScrollScale from '../components/ScrollScale';
 import { HEADLINER, PILLARS } from '../data/services';
 import { useLang } from '../i18n/LanguageContext';
 import { useBooking } from '../hooks/useBooking';
@@ -58,22 +59,22 @@ export default function Headliner() {
       <div className="mt-[clamp(2.5rem,7vh,4rem)] grid gap-10 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
         {/* ---- Left: the drawing + a slot for the real suede shot ---- */}
         <div className="flex flex-col gap-6">
-          <Reveal>
+          <ScrollScale>
             <div className="t-surface t-line rounded-[var(--radius-panel)] border p-6 sm:p-8">
-              <CarDiagram active={pillars} />
+              <CarDiagram vehicle={vehicle} active={pillars} />
               <p className="label-mono t-fg-faint mt-4 text-center">
                 {t.headliner.pillarNote}
               </p>
             </div>
-          </Reveal>
+          </ScrollScale>
 
-          <Reveal delay={0.08}>
+          <ScrollScale>
             <Placeholder
               ratio="16 / 10"
               label={t.headliner.photoLabel}
               caption={t.headliner.photoCaption}
             />
-          </Reveal>
+          </ScrollScale>
         </div>
 
         {/* ---- Right: the configurator ---- */}
@@ -190,19 +191,78 @@ export default function Headliner() {
 }
 
 /**
+ * Three silhouettes with an identical command structure, so Framer can tween
+ * one into the next: pick "SUV" and the roof rises and squares off; pick
+ * "Coupe" and it drops and rakes back. The pillars move with the roof.
+ *
+ * Path structure is the contract: body = M C L L C L C L L C, glass =
+ * M L C L C L Z. Change a shape, keep the commands, and the morph keeps working.
+ */
+const SHAPES = {
+  'suede-coupe': {
+    body: 'M28 128 C24 108 30 100 46 97 L118 90 L168 60 C178 52 190 50 204 50 L262 50 C280 50 296 56 306 66 L346 94 L382 99 C396 102 400 110 398 128',
+    glass: 'M126 88 L176 62 C184 56 194 54 206 54 L262 54 C276 54 290 59 300 68 L334 92 Z',
+    pillars: {
+      'pillar-a': [168, 60, 126, 88],
+      'pillar-b': [238, 54, 238, 90],
+      'pillar-c': [306, 66, 334, 92],
+    },
+  },
+  'suede-sedan': {
+    body: 'M28 128 C24 108 30 100 46 97 L112 90 L152 58 C160 52 172 49 186 49 L286 49 C300 49 312 53 320 61 L352 92 L382 99 C396 102 400 110 398 128',
+    glass: 'M120 88 L160 60 C166 55 174 53 184 53 L286 53 C297 53 306 56 312 63 L340 90 Z',
+    pillars: {
+      'pillar-a': [152, 58, 120, 88],
+      'pillar-b': [232, 53, 232, 90],
+      'pillar-c': [312, 63, 340, 90],
+    },
+  },
+  'suede-suv': {
+    body: 'M28 128 C24 104 30 96 46 93 L104 88 L136 46 C142 38 154 36 168 36 L318 36 C332 36 344 40 350 48 L364 88 L384 96 C396 100 400 110 398 128',
+    glass: 'M112 86 L142 50 C148 42 158 40 170 40 L316 40 C328 40 338 44 344 52 L358 86 Z',
+    pillars: {
+      'pillar-a': [136, 46, 112, 86],
+      'pillar-b': [232, 40, 232, 86],
+      'pillar-c': [344, 52, 358, 86],
+    },
+  },
+};
+
+const STROKE = {
+  duration: 1.4,
+  ease: [0.16, 1, 0.3, 1],
+};
+
+/**
  * Side-profile line drawing. Deliberately a technical sketch rather than an
  * illustration: it has to read as a diagram of *your* car, not a picture of
  * one particular model.
+ *
+ * It draws itself when scrolled into view — body first, then glass, then
+ * wheels — the way a pen would. After that, every change is a morph: the
+ * vehicle type reshapes the roofline and a ticked pillar traces its stroke in.
  */
-function CarDiagram({ active = [] }) {
-  const lit = (id) => (active.includes(id) ? 1 : 0);
+function CarDiagram({ vehicle, active = [] }) {
+  const reduced = useReducedMotion();
+  const shape = SHAPES[vehicle] || SHAPES['suede-sedan'];
+  const draw = (delay) => ({
+    hidden: { pathLength: reduced ? 1 : 0, opacity: reduced ? 1 : 0 },
+    show: {
+      pathLength: 1,
+      opacity: 1,
+      transition: { pathLength: { ...STROKE, delay }, opacity: { duration: 0.2, delay } },
+    },
+  });
 
   return (
-    <svg
+    <motion.svg
       viewBox="0 0 420 170"
       className="w-full"
       role="img"
       aria-label="Side profile of a vehicle showing the A, B and C pillars"
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, amount: 0.5 }}
     >
       <g
         fill="none"
@@ -211,39 +271,76 @@ function CarDiagram({ active = [] }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        {/* Body */}
-        <path d="M28 128 C24 108 30 100 46 97 L112 90 L152 58 C160 52 172 49 186 49 L286 49 C300 49 312 53 320 61 L352 92 L382 99 C396 102 400 110 398 128" />
-        <path d="M28 128 L392 128" strokeDasharray="2 6" stroke="rgb(var(--fg) / 0.16)" />
+        {/* Body — morphs between silhouettes, draws in on first sight. */}
+        <motion.path
+          variants={draw(0)}
+          animate={{ d: shape.body }}
+          transition={{ d: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } }}
+          d={shape.body}
+        />
+        <motion.path
+          variants={draw(0.35)}
+          d="M28 128 L392 128"
+          strokeDasharray="2 6"
+          stroke="rgb(var(--fg) / 0.16)"
+        />
         {/* Glass line */}
-        <path d="M120 88 L160 60 C166 55 174 53 184 53 L286 53 C297 53 306 56 312 63 L340 90 Z" stroke="rgb(var(--fg) / 0.16)" />
+        <motion.path
+          variants={draw(0.5)}
+          animate={{ d: shape.glass }}
+          transition={{ d: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } }}
+          d={shape.glass}
+          stroke="rgb(var(--fg) / 0.16)"
+        />
       </g>
 
       {/* Pillars — each one is the exact piece the checkbox above buys. */}
-      <Pillar d="M152 58 L120 88" opacity={lit('pillar-a')} label="A" x={128} y={80} />
-      <Pillar d="M232 53 L232 90" opacity={lit('pillar-b')} label="B" x={238} y={80} />
-      <Pillar d="M312 63 L340 90" opacity={lit('pillar-c')} label="C" x={318} y={80} />
+      {['pillar-a', 'pillar-b', 'pillar-c'].map((id, i) => (
+        <Pillar
+          key={id}
+          points={shape.pillars[id]}
+          lit={active.includes(id)}
+          label={['A', 'B', 'C'][i]}
+          delay={0.8 + i * 0.12}
+          reduced={reduced}
+        />
+      ))}
 
       {/* Wheels */}
       <g fill="none" stroke="rgb(var(--fg) / 0.3)" strokeWidth="1.5">
-        <circle cx="112" cy="128" r="24" />
-        <circle cx="112" cy="128" r="10" stroke="rgb(var(--fg) / 0.16)" />
-        <circle cx="318" cy="128" r="24" />
-        <circle cx="318" cy="128" r="10" stroke="rgb(var(--fg) / 0.16)" />
+        <motion.circle variants={draw(0.9)} cx="112" cy="128" r="24" />
+        <motion.circle variants={draw(1.05)} cx="112" cy="128" r="10" stroke="rgb(var(--fg) / 0.16)" />
+        <motion.circle variants={draw(0.95)} cx="318" cy="128" r="24" />
+        <motion.circle variants={draw(1.1)} cx="318" cy="128" r="10" stroke="rgb(var(--fg) / 0.16)" />
       </g>
-    </svg>
+    </motion.svg>
   );
 }
 
-function Pillar({ d, opacity, label, x, y }) {
+function Pillar({ points, lit, label, delay, reduced }) {
+  const [x1, y1, x2, y2] = points;
+  const d = `M${x1} ${y1} L${x2} ${y2}`;
+  // Label sits just off the pillar's midpoint, on the cabin side.
+  const lx = (x1 + x2) / 2 + (label === 'C' ? -14 : 7);
+  const ly = (y1 + y2) / 2 + 3;
+
   return (
     <g>
-      <path
+      {/* Grey track: always there, moves with the silhouette. */}
+      <motion.path
+        variants={{
+          hidden: { pathLength: reduced ? 1 : 0, opacity: reduced ? 1 : 0 },
+          show: { pathLength: 1, opacity: 1, transition: { ...STROKE, delay } },
+        }}
+        animate={{ d }}
+        transition={{ d: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } }}
         d={d}
         fill="none"
         stroke="rgb(var(--fg) / 0.28)"
         strokeWidth="4"
         strokeLinecap="round"
       />
+      {/* Lit stroke: traces in when ticked, un-traces when unticked. */}
       <motion.path
         d={d}
         fill="none"
@@ -251,18 +348,20 @@ function Pillar({ d, opacity, label, x, y }) {
         strokeWidth="4"
         strokeLinecap="round"
         initial={false}
-        animate={{ opacity }}
-        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        animate={{ d, pathLength: lit ? 1 : 0, opacity: lit ? 1 : 0 }}
+        transition={{
+          d: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+          pathLength: { duration: 0.45, ease: [0.16, 1, 0.3, 1] },
+          opacity: { duration: lit ? 0.1 : 0.35, delay: lit ? 0 : 0.2 },
+        }}
       />
       <motion.text
-        x={x}
-        y={y}
         fontSize="10"
         fontFamily="var(--font-mono)"
         fill="rgb(var(--fg))"
         initial={false}
-        animate={{ opacity: opacity ? 0.85 : 0.25 }}
-        transition={{ duration: 0.35 }}
+        animate={{ x: lx, y: ly, opacity: lit ? 0.85 : 0.25 }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       >
         {label}
       </motion.text>

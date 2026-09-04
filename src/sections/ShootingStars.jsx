@@ -1,5 +1,6 @@
 import Section, { Container } from '../components/Section';
 import Reveal from '../components/Reveal';
+import MaskText from '../components/MaskText';
 import Starfield from '../components/Starfield';
 import { SHOOTING_STARS } from '../data/services';
 import { useLang } from '../i18n/LanguageContext';
@@ -36,11 +37,13 @@ export default function ShootingStars() {
               <span className="label-mono text-white/60">{t.shooting.label}</span>
             </Reveal>
 
-            <Reveal delay={0.06}>
-              <h2 className="type-hero mt-6 text-balance text-white">
-                {t.shooting.title} <span className="ital">{t.shooting.titleItalic}</span>
-              </h2>
-            </Reveal>
+            <MaskText
+              as="h2"
+              text={t.shooting.title}
+              italic={t.shooting.titleItalic}
+              delay={0.06}
+              className="type-hero mt-6 text-white"
+            />
 
             <Reveal delay={0.12}>
               <p className="type-lead mt-6 max-w-[44ch] text-pretty text-white/70">
