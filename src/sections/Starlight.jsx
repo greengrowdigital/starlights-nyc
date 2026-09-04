@@ -162,19 +162,20 @@ export default function Starlight() {
                     <div className="headliner-dome pointer-events-none absolute" aria-hidden="true" />
 
                     {/* Live count, bottom-left, inside the trim line — the way a
-                        spec plate reads. Caption opposite it, so neither sits
-                        under the map lights at the top. */}
+                        spec plate reads. It is the only text on the panel: the
+                        caption is long, and on the panel it either sat under the
+                        map lights or ran into this. */}
                     <div className="absolute bottom-[11%] left-[8%] flex items-baseline gap-2">
                       <motion.span className="tnum text-[1.75rem] font-semibold leading-none text-white sm:text-[2.5rem]">
                         {countText}
                       </motion.span>
                       <span className="label-mono text-white/60">{t.starlight.starsLabel}</span>
                     </div>
-
-                    <span className="label-mono absolute bottom-[12%] right-[8%] hidden text-white/60 sm:block">
-                      {t.starlight.previewCaption}
-                    </span>
                   </div>
+
+                  <p className="label-mono t-fg-faint mt-3 hidden text-center sm:block">
+                    {t.starlight.previewCaption}
+                  </p>
                 </div>
               </Reveal>
 
