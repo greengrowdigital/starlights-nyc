@@ -39,7 +39,11 @@ export default function Starlight() {
       {/* ---- The ceiling ---- */}
       <Reveal delay={0.1} className="mt-[clamp(2.5rem,6vh,4rem)]">
         <div className="relative">
-          <div className="spot-warm pointer-events-none absolute -inset-x-10 -inset-y-16 -z-10" />
+          {/* Vertical bleed only. A negative horizontal inset here reached past
+              the viewport, grew the document's scroll width, and re-centred the
+              fixed nav — its right gutter collapsed to 8px on wide screens. The
+              glow reads the same because the gradient is soft at its edges. */}
+          <div className="spot-warm pointer-events-none absolute inset-x-0 -inset-y-16 -z-10" />
 
           <div
             className="t-line relative overflow-hidden rounded-[var(--radius-hero)] border bg-black"
@@ -74,7 +78,14 @@ export default function Starlight() {
       </Reveal>
 
       {/* ---- The kits ---- */}
-      <RevealGroup className="mt-[clamp(3rem,8vh,5rem)] grid gap-4 sm:grid-cols-3" stagger={0.09}>
+      {/* Two columns before three. At the sm breakpoint a third column leaves
+          each card only ~118px of content box, which is narrower than its own
+          title-plus-badge row — the SELECTED pill painted straight through the
+          card border and the price ran into the INSTALLED label. */}
+      <RevealGroup
+        className="mt-[clamp(3rem,8vh,5rem)] grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        stagger={0.09}
+      >
         {STAR_KITS.map((item) => {
           const active = item.id === selected;
           const copy = s(item);
@@ -90,8 +101,10 @@ export default function Starlight() {
                   backgroundColor: active ? 'rgb(var(--fg) / 0.07)' : 'transparent',
                 }}
               >
+                {/* min-w-0 lets the title shrink instead of forcing the row
+                    wider than the card and pushing the badge over the border. */}
                 <div className="flex items-start justify-between gap-3">
-                  <span className="type-title t-fg">{copy.name}</span>
+                  <span className="type-title t-fg min-w-0">{copy.name}</span>
                   <span
                     className="label-mono shrink-0 rounded-full px-2.5 py-1.5 transition-opacity duration-500"
                     style={{
@@ -109,7 +122,7 @@ export default function Starlight() {
                   {copy.note}
                 </p>
 
-                <div className="t-line mt-6 flex items-baseline justify-between border-t pt-5">
+                <div className="t-line mt-6 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t pt-5">
                   <span className="tnum type-title t-fg">{money(item.price, lang)}</span>
                   <span className="label-mono t-fg-faint">{t.common.installed}</span>
                 </div>

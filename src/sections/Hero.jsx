@@ -86,10 +86,12 @@ export default function Hero() {
 
       <motion.div style={{ y: contentY, opacity: contentOpacity }}>
         <Container className="flex flex-col items-center text-center">
-          {/* text-balance keeps the eyebrow from dropping a lone "YORK" onto a
-              second line at 375px, where the mono tracking makes it long. */}
+          {/* The eyebrow is set in mono with 0.24em tracking, and `ch` units do
+              not account for tracking — a max-w in ch measured far narrower
+              than it looked and folded this into four lines at 375px. Tighten
+              the tracking on small screens instead and let it use the width. */}
           <motion.span
-            className="label-mono t-fg-muted max-w-[24ch] text-balance sm:max-w-none"
+            className="label-mono t-fg-muted text-balance [letter-spacing:0.14em] sm:[letter-spacing:0.24em]"
             {...enter(1.35)}
           >
             {t.hero.eyebrow}
