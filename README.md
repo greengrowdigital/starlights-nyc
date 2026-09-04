@@ -212,6 +212,26 @@ by a `motion.span`, so the whole sequence plays **without a single React
 render**. Under `max-height: 540px` (landscape phones) the pin is released and
 the scene flows normally.
 
+### The drawings
+
+Three interactive illustrations are hand-built SVG, monochrome so they live on
+either pole of the scroll:
+
+- **`CarProfile`** (`src/components/CarProfile.jsx`) — three real silhouettes
+  (coupe, sedan, SUV) with the proportions of the actual vehicles. Pillars are
+  drawn as the bands of metal between the glass, so ticking one lights the
+  exact part being wrapped. Body outlines morph with **flubber**; glass,
+  pillars, lights and handles are fixed-count polygons Framer tweens; wheels
+  move and resize. Geometry lives in `VEHICLES` — edit numbers, keep the shape.
+- **`CabinDrawing`** (`src/components/CabinDrawing.jsx`) — the cabin from the
+  driver's seat, with the Flow Series strips on the surfaces they follow on a
+  real install: the dash seam, the door trims, the footwells. The tracer is a
+  short bright segment of the dash path pushed along it with `pathOffset`;
+  "Flow" mode uses an SMIL-scrolled spectrum gradient, no JS per frame.
+- **The headliner** (in `Starlight.jsx` + `.headliner-*` in `index.css`) — the
+  starfield is clipped to a roof panel's trim outline, with the map-light
+  console, a sunroof the fiber runs around, grab handles and the dome light.
+
 ## Accessibility & motion
 
 - Every colour is derived from `--fg`, so contrast holds on both poles of the scroll.

@@ -132,27 +132,46 @@ export default function Starlight() {
                   <div className="spot-warm pointer-events-none absolute inset-x-0 -inset-y-16 -z-10" />
 
                   <div className="t-line relative aspect-[2/1] overflow-hidden rounded-[var(--radius-hero)] border bg-black lg:aspect-[16/9]">
-                    <Starfield density={DENSITIES[0]} densityValue={density} shooting={0} seed={21} />
+                    {/* The headliner itself, seen from the seats: the fiber
+                        stops at the trim edge, so the sky is clipped to the
+                        panel's own outline and the surround stays suede-black. */}
+                    <div className="headliner-panel absolute inset-0">
+                      <Starfield density={DENSITIES[0]} densityValue={density} shooting={0} seed={21} />
+                      {/* Suede edge: the fiber thins toward the trim. */}
+                      <div
+                        className="pointer-events-none absolute inset-0"
+                        style={{
+                          background:
+                            'radial-gradient(ellipse 92% 96% at 50% 50%, transparent 62%, rgb(0 0 0 / 0.55) 100%)',
+                          boxShadow: 'inset 0 0 50px 10px rgb(0 0 0 / 0.75)',
+                        }}
+                      />
+                      {/* Sunroof: the fiber runs around it, not through it. */}
+                      <div className="headliner-sunroof pointer-events-none absolute" />
+                    </div>
 
-                    {/* Suede edge: the headliner the fiber sits behind. */}
-                    <div
-                      className="pointer-events-none absolute inset-0"
-                      style={{
-                        background:
-                          'radial-gradient(ellipse 86% 94% at 50% 50%, transparent 58%, rgb(0 0 0 / 0.7) 100%)',
-                        boxShadow: 'inset 0 0 70px 18px rgb(0 0 0 / 0.85)',
-                      }}
-                    />
+                    {/* Trim line and fittings — the parts of a roof you would
+                        actually see looking up. */}
+                    <div className="headliner-trim pointer-events-none absolute" aria-hidden="true" />
+                    <div className="headliner-console pointer-events-none absolute" aria-hidden="true">
+                      <span />
+                      <span />
+                    </div>
+                    <div className="headliner-handle pointer-events-none absolute left-[7%] top-[46%]" aria-hidden="true" />
+                    <div className="headliner-handle pointer-events-none absolute right-[7%] top-[46%]" aria-hidden="true" />
+                    <div className="headliner-dome pointer-events-none absolute" aria-hidden="true" />
 
-                    {/* Live count, bottom-left, the way a spec plate reads. */}
-                    <div className="absolute bottom-4 left-5 flex items-baseline gap-2 sm:bottom-6 sm:left-8">
+                    {/* Live count, bottom-left, inside the trim line — the way a
+                        spec plate reads. Caption opposite it, so neither sits
+                        under the map lights at the top. */}
+                    <div className="absolute bottom-[11%] left-[8%] flex items-baseline gap-2">
                       <motion.span className="tnum text-[1.75rem] font-semibold leading-none text-white sm:text-[2.5rem]">
                         {countText}
                       </motion.span>
                       <span className="label-mono text-white/60">{t.starlight.starsLabel}</span>
                     </div>
 
-                    <span className="label-mono absolute right-5 top-4 hidden text-white/60 sm:right-8 sm:top-6 sm:block">
+                    <span className="label-mono absolute bottom-[12%] right-[8%] hidden text-white/60 sm:block">
                       {t.starlight.previewCaption}
                     </span>
                   </div>

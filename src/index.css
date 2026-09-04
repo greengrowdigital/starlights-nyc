@@ -297,6 +297,67 @@
     background-image: var(--grain-url);
   }
 
+  /* ---- The headliner, seen from the seats ----
+     The starfield is clipped to the trim outline of a real roof panel; the
+     fittings are the things you would actually notice looking up. Everything
+     is in percentages of the panel so the 2/1 phone crop and the 16/9 desktop
+     crop both read as the same roof. */
+  .headliner-panel {
+    clip-path: inset(6% 4% 7% 4% round 22% / 34%);
+  }
+  .headliner-trim {
+    inset: 6% 4% 7% 4%;
+    border-radius: 22% / 34%;
+    border: 1px solid rgb(255 255 255 / 0.11);
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 0.03) inset;
+  }
+  .headliner-sunroof {
+    left: 27%;
+    right: 27%;
+    top: 12%;
+    height: 34%;
+    border-radius: 6% / 14%;
+    background: rgb(0 0 0 / 0.62);
+    border: 1px solid rgb(255 255 255 / 0.07);
+  }
+  .headliner-console {
+    left: 50%;
+    top: 5.5%;
+    width: 15%;
+    height: 6%;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.05);
+    border: 1px solid rgb(255 255 255 / 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+  }
+  .headliner-console span {
+    width: 12%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: rgb(255 244 214 / 0.55);
+    box-shadow: 0 0 10px 2px rgb(255 244 214 / 0.25);
+  }
+  .headliner-handle {
+    width: 6%;
+    height: 3.5%;
+    border-radius: 999px;
+    border: 1px solid rgb(255 255 255 / 0.12);
+    background: rgb(255 255 255 / 0.035);
+  }
+  .headliner-dome {
+    left: 50%;
+    bottom: 10%;
+    width: 8%;
+    height: 5%;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    border: 1px solid rgb(255 255 255 / 0.1);
+    background: rgb(255 244 214 / 0.06);
+  }
+
   /* The pinned ceiling scene. On landscape phones the 100svh scene cannot hold
      the preview and three kits, so the pin is released and it flows normally. */
   @media (max-height: 540px) {

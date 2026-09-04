@@ -4,6 +4,7 @@ import { Check } from 'lucide-react';
 import Section, { SectionHead } from '../components/Section';
 import Reveal, { RevealGroup, RevealItem } from '../components/Reveal';
 import ScrollScale from '../components/ScrollScale';
+import CabinDrawing from '../components/CabinDrawing';
 import { FLOW, FLOW_INCLUDES } from '../data/services';
 import { useLang } from '../i18n/LanguageContext';
 import { useBooking } from '../hooks/useBooking';
@@ -41,25 +42,6 @@ export default function FlowSeries() {
   const isFlow = swatch.color === null;
   const glow = swatch.color || '#0a84ff';
 
-  // One style object drives the dash, both doors and both footwells, so the
-  // cabin always changes as a single installed system.
-  const lightStyle = isFlow
-    ? { backgroundImage: SPECTRUM, boxShadow: `0 0 46px 10px rgb(120 140 255 / 0.4)` }
-    : { backgroundColor: glow, boxShadow: `0 0 46px 10px ${glow}66` };
-
-  // Power-on sequence. Real ambient kits do not switch colour instantly — the
-  // controller runs the new colour down the dash strip, then the doors catch,
-  // then the footwells. Keying on the swatch id restarts the sequence on every
-  // tap, and `powerOn(delay)` is what each zone plays when it catches.
-  const powerOn = (delay) =>
-    reduced
-      ? {}
-      : {
-          initial: { opacity: 0.25 },
-          animate: { opacity: 1 },
-          transition: { duration: 0.55, delay, ease: [0.16, 1, 0.3, 1] },
-        };
-
   return (
     <Section id="flow" theme="dark">
       <SectionHead
@@ -78,78 +60,10 @@ export default function FlowSeries() {
         >
           <div className="grain pointer-events-none absolute inset-0 z-10" />
 
-          {/* Dash — the long horizontal run across the top. */}
-          <motion.div
-            key={`dash-${swatch.id}`}
-            className={`absolute left-[8%] right-[8%] top-[24%] h-[3px] rounded-full ${isFlow ? 'animate-flow' : ''}`}
-            style={lightStyle}
-            {...powerOn(0)}
-          />
-
-          {/* The tracer: a bright head that runs the new colour down the dash
-              before the strip settles — the tell that this is a system, not
-              a paint job. */}
-          {!reduced && (
-            <motion.span
-              key={`tracer-${swatch.id}`}
-              aria-hidden="true"
-              className="absolute top-[24%] h-[3px] w-[9%] -translate-y-px rounded-full"
-              style={{
-                background: isFlow
-                  ? 'linear-gradient(90deg, transparent, #fff)'
-                  : `linear-gradient(90deg, transparent, #fff)`,
-                boxShadow: `0 0 18px 4px ${isFlow ? '#ffffff' : glow}`,
-                mixBlendMode: 'screen',
-              }}
-              initial={{ left: '-2%', opacity: 0 }}
-              animate={{ left: ['-2%', '92%'], opacity: [0, 1, 1, 0] }}
-              transition={{ duration: 0.95, ease: [0.4, 0, 0.2, 1] }}
-            />
-          )}
-
-          {/* Doors — two raking runs down the sides. */}
-          <motion.div
-            key={`door-l-${swatch.id}`}
-            className={`absolute bottom-[26%] left-[6%] h-[3px] w-[26%] origin-left rotate-[14deg] rounded-full ${isFlow ? 'animate-flow' : ''}`}
-            style={lightStyle}
-            {...powerOn(0.55)}
-          />
-          <motion.div
-            key={`door-r-${swatch.id}`}
-            className={`absolute bottom-[26%] right-[6%] h-[3px] w-[26%] origin-right -rotate-[14deg] rounded-full ${isFlow ? 'animate-flow' : ''}`}
-            style={lightStyle}
-            {...powerOn(0.55)}
-          />
-
-          {/* Footwells — pooled light, not a line. Last to catch. */}
-          <FootPool
-            key={`pool-l-${swatch.id}`}
-            className="bottom-[10%] left-[22%]"
-            color={glow}
-            isFlow={isFlow}
-            {...powerOn(0.85)}
-          />
-          <FootPool
-            key={`pool-r-${swatch.id}`}
-            className="bottom-[10%] right-[22%]"
-            color={glow}
-            isFlow={isFlow}
-            {...powerOn(0.85)}
-          />
-
-          {/* Windshield line, so the abstraction still reads as a cabin. */}
-          <svg
-            viewBox="0 0 400 225"
-            className="absolute inset-0 h-full w-full"
-            aria-hidden="true"
-            fill="none"
-            stroke="rgb(255 255 255 / 0.1)"
-            strokeWidth="1"
-          >
-            <path d="M40 44 C120 24 280 24 360 44" />
-            <path d="M56 52 L344 52" stroke="rgb(255 255 255 / 0.06)" />
-            <path d="M148 225 L172 96 L228 96 L252 225" stroke="rgb(255 255 255 / 0.06)" />
-          </svg>
+          {/* The cabin, from the driver's seat, with the strips on the surfaces
+              they follow on a real install. Keyed on the swatch so the power-on
+              sequence (dash → doors → footwells) restarts on every tap. */}
+          <CabinDrawing key={swatch.id} id={swatch.id} color={glow} isFlow={isFlow} reduced={reduced} />
 
           <motion.span
             key={`label-${swatch.id}`}
@@ -250,23 +164,5 @@ export default function FlowSeries() {
         </Reveal>
       </div>
     </Section>
-  );
-}
-
-function FootPool({ className, color, isFlow, ...motionProps }) {
-  return (
-    <motion.span
-      {...motionProps}
-      className={`absolute h-[14%] w-[18%] rounded-[50%] blur-[10px] ${className}`}
-      style={{
-        // In Flow mode the strips are already cycling the full spectrum, so the
-        // pools go neutral white — a fixed blue pool under a rainbow dash reads
-        // as two systems instead of one.
-        background: isFlow
-          ? 'radial-gradient(ellipse at center, rgb(255 255 255 / 0.5), transparent 70%)'
-          : `radial-gradient(ellipse at center, ${color}aa, transparent 70%)`,
-      }}
-      aria-hidden="true"
-    />
   );
 }
