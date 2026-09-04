@@ -105,6 +105,19 @@ export default function Booking() {
     setDelivered(Boolean(result && result.delivered));
     setSent(request);
     setStatus('done');
+
+    // The confirmation is a fraction of the height of the form it replaces, so
+    // the document shrinks under a scroll position that does not move — leaving
+    // the customer looking at the footer, with no idea whether anything
+    // happened. Put the confirmation back in front of them.
+    window.requestAnimationFrame(() => {
+      const panel = document.getElementById('book');
+      if (!panel) return;
+      const reducedMotion =
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      panel.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
+    });
   };
 
   const reset = () => {
