@@ -1,0 +1,406 @@
+@import 'tailwindcss';
+
+/* =========================================================================
+   STARLIGHTS.NYC — Design System
+   Register: "Apple keynote at 2am." The page is a single scroll that breathes
+   between true black (the night sky) and paper white (the workshop). Nothing
+   is decorative: every surface is either the ceiling you are buying, or the
+   white room where the work gets explained.
+
+   The whole palette is driven by two runtime variables — --bg and --fg —
+   interpolated on scroll by src/hooks/useScrollTheme.js. Components never
+   hardcode black or white; they read the theme. That is what makes the
+   background morph feel like one continuous object instead of stacked bands.
+   ========================================================================= */
+
+@theme {
+  /* — Poles the scroll interpolates between — */
+  --color-void: #000000; /* true black — the sky */
+  --color-paper: #ffffff; /* paper white — the workshop */
+  --color-ink: #0a0a0b; /* near-black surfaces on white */
+  --color-smoke: #f2f2f4; /* apple-grey secondary surface */
+
+  /* — Starlight accents (used only where light is literally the product) — */
+  --color-star: #fff4d6; /* warm fiber-optic point */
+  --color-star-cool: #cfe3ff; /* cool white star */
+  --color-glow: #ffd98a; /* halo around a lit star */
+
+  /* — Flow Series spectrum (quarantined to the ambient section) — */
+  --color-flow-1: #ff2d55;
+  --color-flow-2: #ff9f0a;
+  --color-flow-3: #30d158;
+  --color-flow-4: #0a84ff;
+  --color-flow-5: #bf5af2;
+
+  /* — Type families —
+     Inter Tight carries every headline (the Apple register: huge, tight,
+     optically corrected). Instrument Serif italic is quarantined to a single
+     word per headline — the one that has to feel like night. JetBrains Mono
+     is for indices, prices and technical labels only. */
+  --font-display: 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-editorial: 'Instrument Serif', ui-serif, Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* — Motion — */
+  --ease-lux: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* — Radius scale — */
+  --radius-field: 0.75rem;
+  --radius-card: 1.25rem;
+  --radius-panel: 1.75rem;
+  --radius-hero: 2.25rem;
+}
+
+/* =========================================================================
+   Runtime theme — written by useScrollTheme as space-separated RGB channels
+   so every alpha variant composes with rgb(var(--fg) / 0.5).
+   Defaults are the hero's values so the very first paint is already correct.
+   ========================================================================= */
+:root {
+  --bg: 0 0 0;
+  --fg: 255 255 255;
+  --nav-h: 4.25rem;
+}
+
+@layer base {
+  * {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    background-color: rgb(var(--bg));
+    color: rgb(var(--fg));
+    font-family: var(--font-body);
+    font-weight: 400;
+    line-height: 1.6;
+    overflow-x: hidden;
+    /* No transition here: the value is interpolated per-frame on scroll. */
+  }
+
+  ::selection {
+    background-color: rgb(var(--fg));
+    color: rgb(var(--bg));
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    line-height: 1.04;
+    letter-spacing: -0.03em;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  /* Focus ring reads correctly on both poles because it is drawn in --fg. */
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid rgb(var(--fg) / 0.75);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+  }
+
+  /* Keep the native date/time glyphs visible while the page is on black. */
+  input[type='date']::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.55;
+    cursor: pointer;
+  }
+
+  /* Anchor jumps must clear the fixed nav — the whole site is one scroll, so
+     every in-page link depends on this. */
+  section[id] {
+    scroll-margin-top: var(--nav-h);
+  }
+}
+
+/* ---- Theme-bound primitives (the only way to reference black/white) ----
+   Declared with @utility rather than inside @layer so they accept variants:
+   `hover:t-fg`, `md:t-surface` and friends all generate correctly. */
+@utility t-bg {
+  background-color: rgb(var(--bg));
+}
+@utility t-fg {
+  color: rgb(var(--fg));
+}
+/* Text tiers.
+   Named by ROLE rather than by opacity, because the numbers are dictated by
+   contrast, not taste. The page is white in some sections, #f2f2f4 in one, and
+   true black in others, so every text colour has to clear 4.5:1 on all three
+   surfaces. The measured floor for that is alpha 0.58 — below it a tier fails
+   somewhere, which is how an earlier 0.40 tier shipped unreadable micro-labels
+   on the light half of the page.
+
+     tier      alpha   on white   on smoke   on black
+     strong     0.85     12.4       11.5       13.9
+     muted      0.70      7.6        7.3       10.0
+     faint      0.58      4.9        4.7        6.9   <- AA floor */
+@utility t-fg-strong {
+  color: rgb(var(--fg) / 0.85);
+}
+@utility t-fg-muted {
+  color: rgb(var(--fg) / 0.7);
+}
+@utility t-fg-faint {
+  color: rgb(var(--fg) / 0.58);
+}
+@utility t-line {
+  border-color: rgb(var(--fg) / 0.14);
+}
+@utility t-line-soft {
+  border-color: rgb(var(--fg) / 0.08);
+}
+@utility t-surface {
+  background-color: rgb(var(--fg) / 0.045);
+}
+@utility t-surface-2 {
+  background-color: rgb(var(--fg) / 0.08);
+}
+@utility t-hairline {
+  height: 1px;
+  background-color: rgb(var(--fg) / 0.12);
+}
+
+@layer utilities {
+  /* Inverted pill — the single CTA shape in the whole site. */
+  .btn-invert {
+    background-color: rgb(var(--fg));
+    color: rgb(var(--bg));
+    transition:
+      transform 0.35s var(--ease-lux),
+      opacity 0.35s var(--ease-lux);
+  }
+  .btn-invert:hover {
+    transform: translateY(-2px);
+    opacity: 0.88;
+  }
+  .btn-invert:active {
+    transform: translateY(0) scale(0.985);
+  }
+
+  .btn-ghost {
+    border: 1px solid rgb(var(--fg) / 0.25);
+    color: rgb(var(--fg));
+    transition:
+      background-color 0.35s var(--ease-lux),
+      transform 0.35s var(--ease-lux),
+      border-color 0.35s var(--ease-lux);
+  }
+  .btn-ghost:hover {
+    background-color: rgb(var(--fg) / 0.07);
+    border-color: rgb(var(--fg) / 0.45);
+    transform: translateY(-2px);
+  }
+
+  /* ---- Fluid display type ----
+     Every hero-scale size is capped against viewport HEIGHT as well as width
+     (min(vw, vh)) so a 1440x768 laptop never pushes the hero past 100vh. */
+  .type-mega {
+    font-family: var(--font-display);
+    font-size: clamp(2.75rem, min(11.5vw, 15.5vh), 9rem);
+    line-height: 0.92;
+    letter-spacing: -0.045em;
+    font-weight: 600;
+  }
+  .type-hero {
+    font-family: var(--font-display);
+    font-size: clamp(2.25rem, min(7.5vw, 10vh), 5.5rem);
+    line-height: 0.98;
+    letter-spacing: -0.038em;
+    font-weight: 600;
+  }
+  .type-display {
+    font-family: var(--font-display);
+    font-size: clamp(1.7rem, min(4.8vw, 6.2vh), 3.4rem);
+    line-height: 1.06;
+    letter-spacing: -0.028em;
+    font-weight: 600;
+  }
+  .type-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.35rem, 2.6vw, 1.9rem);
+    line-height: 1.15;
+    letter-spacing: -0.022em;
+    font-weight: 600;
+  }
+  .type-lead {
+    font-size: clamp(1.05rem, 1.6vw, 1.375rem);
+    line-height: 1.5;
+    letter-spacing: -0.011em;
+    font-weight: 400;
+  }
+
+  /* The one italic word per headline that carries the night. */
+  .ital {
+    font-family: var(--font-editorial);
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+
+  /* Technical micro-label. */
+  .label-mono {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  /* ---- Atmosphere ---- */
+  /* Film grain. Sits above the background, below content, never intercepts. */
+  .grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+    background-image: var(--grain-url);
+  }
+
+  /* Soft halo used behind lit objects on the dark pole. */
+  .spot-warm {
+    background: radial-gradient(
+      ellipse 55% 50% at 50% 50%,
+      rgb(255 217 138 / 0.16),
+      transparent 68%
+    );
+  }
+  .spot-cool {
+    background: radial-gradient(
+      ellipse 60% 55% at 50% 45%,
+      rgb(207 227 255 / 0.14),
+      transparent 70%
+    );
+  }
+
+  /* Edge fade so a full-bleed canvas never ends on a hard line. */
+  .fade-y {
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      #000 12%,
+      #000 88%,
+      transparent
+    );
+    mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
+  }
+
+  .hover-lift {
+    transition: transform 0.45s var(--ease-lux);
+  }
+  .hover-lift:hover {
+    transform: translateY(-3px);
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Grain texture kept in its own rule: the data URI contains characters that
+   are awkward to inline inside the utilities layer. */
+:root {
+  --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* =========================================================================
+   Keyframes
+   ========================================================================= */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee {
+  animation: marquee 42s linear infinite;
+}
+
+@keyframes scroll-hint {
+  0% {
+    transform: translateY(-60%);
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(160%);
+    opacity: 0;
+  }
+}
+.animate-scroll-hint {
+  animation: scroll-hint 2.4s var(--ease-in-out-soft) infinite;
+}
+
+@keyframes flow-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+.animate-flow {
+  background-size: 300% 300%;
+  animation: flow-shift 14s var(--ease-in-out-soft) infinite;
+}
+
+/* =========================================================================
+   Reduced motion — kill the loops, keep the page fully legible and usable.
+   ========================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

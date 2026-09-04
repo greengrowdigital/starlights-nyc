@@ -1,0 +1,24 @@
+{
+  "name": "starlights-nyc",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "STARLIGHTS.NYC — premium automotive interior customization. Single-scroll Apple-style landing with native booking flow.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "framer-motion": "^11.18.2",
+    "lucide-react": "^0.469.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.1.3",
+    "vite": "^6.0.11"
+  }
+}
