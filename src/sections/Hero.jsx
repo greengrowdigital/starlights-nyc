@@ -10,9 +10,19 @@ import Starfield from '../components/Starfield';
 import { Container } from '../components/Section';
 import { useLang } from '../i18n/LanguageContext';
 import { useBooking } from '../hooks/useBooking';
+import { INTRO } from '../lib/intro';
+
+const EASE = [0.16, 1, 0.3, 1];
 
 /**
  * Act one: the ceiling, at full size, before a single word about price.
+ *
+ * The page opens black. The sky comes up one point at a time (Starfield's
+ * ignition cue), and only once it is lit does anything else arrive — the
+ * brand in the top bar, then the headline word by word, the lead, the
+ * buttons, the scroll hint. The schedule lives in src/lib/intro.js and is
+ * shared with the nav, so the two can never fall out of step. A slow zoom-out
+ * on the sky runs underneath the whole sequence.
  *
  * The sky is a live canvas rather than a photo, which matters twice — the
  * client has no photography yet, and a still image of a starlight ceiling
@@ -51,6 +61,7 @@ export default function Hero() {
     mq.addEventListener('change', update);
     return () => mq.removeEventListener('change', update);
   }, []);
+
   // The hero paints its own black plate instead of borrowing the body's. The
   // background morph starts turning the page white while the hero's last third
   // is still on screen, and a starfield over grey looks like a bug — so the
@@ -58,13 +69,12 @@ export default function Hero() {
   const skyOpacity = useTransform(scrollYProgress, [0.3, 0.92], [1, reduced ? 1 : 0]);
 
   /**
-   * Entrance props for one element of the hero.
+   * Entrance props for one element of the hero, on its cue from INTRO.
    *
    * Under prefers-reduced-motion this returns nothing at all, so the element
-   * renders in its final state on first paint. That matters more than taste
-   * here: the choreography holds the primary CTA at opacity 0 for nearly two
-   * seconds, and a visitor who has asked the OS to stop animations was still
-   * being made to wait for a button they could not see.
+   * renders in its final state on first paint — a visitor who has asked the
+   * OS to stop animations must never be made to wait for a button they
+   * cannot see.
    */
   const enter = (delay, y = 12) =>
     reduced
@@ -72,7 +82,7 @@ export default function Hero() {
       : {
           initial: { opacity: 0, y },
           animate: { opacity: 1, y: 0 },
-          transition: { delay, duration: 0.85, ease: [0.16, 1, 0.3, 1] },
+          transition: { delay, duration: 0.85, ease: EASE },
         };
 
   return (
@@ -88,12 +98,16 @@ export default function Hero() {
       />
 
       {/* Oversized by 20% top and bottom so the parallax drift never exposes a
-          starless strip at either edge. */}
+          starless strip at either edge. The slow settle from 1.08 to 1 is the
+          camera easing back as the ceiling comes up. */}
       <motion.div
         className="absolute inset-x-0 -bottom-[20%] -top-[20%] -z-10"
         style={{ y: skyY, opacity: skyOpacity }}
+        initial={{ scale: reduced ? 1 : 1.08 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 7, ease: [0.22, 1, 0.36, 1] }}
       >
-        <Starfield density={900} shooting={2} seed={7} />
+        <Starfield density={900} shooting={2} seed={7} ignite={INTRO.stars} />
 
         {/* Vignette: pulls the eye to the centre and guarantees text contrast
             even where the sky happens to be dense. */}
@@ -116,34 +130,32 @@ export default function Hero() {
         }}
       >
         <Container className="flex flex-col items-center text-center">
-          {/* The eyebrow is set in mono with 0.24em tracking, and `ch` units do
-              not account for tracking — a max-w in ch measured far narrower
-              than it looked and folded this into four lines at 375px. Tighten
-              the tracking on small screens instead and let it use the width. */}
+          {/* Tighter tracking on small screens: `ch` units ignore the mono
+              tracking, so a max-width folded this into four lines at 375px. */}
           <motion.span
             className="label-mono t-fg-muted text-balance [letter-spacing:0.14em] sm:[letter-spacing:0.24em]"
-            {...enter(1.35)}
+            {...enter(INTRO.eyebrow)}
           >
             {t.hero.eyebrow}
           </motion.span>
 
           <h1 className="type-mega t-fg mt-6 flex flex-wrap items-baseline justify-center gap-x-[0.28em] text-balance">
-            <Word delay={1.5}>{t.hero.titleA}</Word>
-            <Word delay={1.62} className="ital">
+            <Word delay={INTRO.title}>{t.hero.titleA}</Word>
+            <Word delay={INTRO.title + INTRO.titleStagger} className="ital">
               {t.hero.titleB}
             </Word>
           </h1>
 
           <motion.p
             className="type-lead t-fg-strong mt-7 max-w-[46ch] text-pretty"
-            {...enter(1.78, 14)}
+            {...enter(INTRO.lead, 14)}
           >
             {t.hero.lead}
           </motion.p>
 
           <motion.div
             className="mt-10 flex flex-col items-center gap-3 sm:flex-row"
-            {...enter(1.9, 14)}
+            {...enter(INTRO.cta, 14)}
           >
             <button
               type="button"
@@ -164,7 +176,7 @@ export default function Hero() {
 
       <motion.div
         className="absolute inset-x-0 bottom-6 flex flex-col items-center gap-3"
-        {...enter(2.2, 0)}
+        {...enter(INTRO.hint, 0)}
         aria-hidden="true"
       >
         <span className="label-mono t-fg-faint">{t.hero.scroll}</span>
@@ -196,7 +208,7 @@ function Word({ children, delay = 0, className = '' }) {
         className={`inline-block ${className}`}
         initial={{ y: '110%' }}
         animate={{ y: '0%' }}
-        transition={{ delay, duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ delay, duration: 1.1, ease: EASE }}
       >
         {children}
       </motion.span>

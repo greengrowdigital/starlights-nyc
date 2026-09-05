@@ -2,7 +2,6 @@ import { LanguageProvider } from './i18n/LanguageContext';
 import { BookingProvider } from './hooks/useBooking';
 import { ScrollThemeProvider } from './hooks/useScrollTheme';
 
-import Loader from './components/Loader';
 import Nav from './components/Nav';
 import ScrollProgress from './components/ScrollProgress';
 import SmoothScroll from './components/SmoothScroll';
@@ -43,7 +42,6 @@ export default function App() {
       <BookingProvider>
         <ScrollThemeProvider>
           <SmoothScroll />
-          <Loader />
           <ScrollProgress />
           <Nav />
 

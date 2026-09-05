@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { useLang } from '../i18n/LanguageContext';
 import { lockScroll, unlockScroll } from '../lib/scroll';
+import { INTRO } from '../lib/intro';
+
+const EASE = [0.16, 1, 0.3, 1];
 
 const LINKS = [
   { href: '#ceiling', key: 'ceiling' },
@@ -19,6 +22,16 @@ const LINKS = [
  */
 export default function Nav() {
   const { t, lang, toggle } = useLang();
+  const reduced = useReducedMotion();
+  // Entrance cue for one part of the bar. Nothing under reduced motion.
+  const arrive = (delay) =>
+    reduced
+      ? {}
+      : {
+          initial: { opacity: 0, y: -8 },
+          animate: { opacity: 1, y: 0 },
+          transition: { delay, duration: 0.8, ease: EASE },
+        };
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState('');
@@ -143,10 +156,12 @@ export default function Nav() {
           aria-label="Primary"
           className="mx-auto flex h-[var(--nav-h)] w-full max-w-[1200px] items-center justify-between gap-6 px-6 sm:px-8 lg:px-12"
         >
-          <a
+          {/* The brand is the first thing to appear after the stars. */}
+          <motion.a
             href="#top"
             className="t-fg flex shrink-0 items-center gap-2"
             aria-label="STARLIGHTS.NYC — home"
+            {...arrive(INTRO.brand)}
           >
             <StarMark />
             <span
@@ -155,13 +170,17 @@ export default function Nav() {
             >
               STARLIGHTS<span className="t-fg-faint">.NYC</span>
             </span>
-          </a>
+          </motion.a>
 
           <ul className="hidden items-center gap-8 lg:flex">
-            {LINKS.map((link) => {
+            {LINKS.map((link, i) => {
               const current = activeId === link.href.slice(1);
               return (
-                <li key={link.href} className="relative">
+                <motion.li
+                  key={link.href}
+                  className="relative"
+                  {...arrive(INTRO.nav + i * INTRO.navStagger)}
+                >
                   <a
                     href={link.href}
                     aria-current={current ? 'location' : undefined}
@@ -179,12 +198,15 @@ export default function Nav() {
                       transition={{ type: 'spring', stiffness: 380, damping: 34 }}
                     />
                   )}
-                </li>
+                </motion.li>
               );
             })}
           </ul>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <motion.div
+            className="flex items-center gap-2 sm:gap-3"
+            {...arrive(INTRO.nav + LINKS.length * INTRO.navStagger)}
+          >
             <button
               type="button"
               onClick={toggle}
@@ -211,7 +233,7 @@ export default function Nav() {
             >
               <Menu className="h-4 w-4" strokeWidth={1.5} />
             </button>
-          </div>
+          </motion.div>
         </nav>
       </header>
 

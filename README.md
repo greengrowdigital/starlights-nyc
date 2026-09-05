@@ -197,6 +197,7 @@ What moves, and why:
 
 | Where | What happens | Driven by |
 |---|---|---|
+| **Opening** | Black. The ceiling lights one point at a time, then the brand appears in the bar, then the links, then the headline word by word, lead, buttons, scroll hint. The schedule is `src/lib/intro.js`; a second load in the same tab plays the short cut | time |
 | Hero | Headline grows and softens as you leave the sky (zoom-through) | scroll |
 | Manifesto | The sentence is *written* word by word, and un-written scrolling back | scroll |
 | **Ceiling** | The section **pins** for three screens while the fiber fills 550 → 800 → 1,100 and the matching kit lights. Tapping a kit jumps to its beat | scroll |
@@ -236,9 +237,9 @@ either pole of the scroll:
 
 - Every colour is derived from `--fg`, so contrast holds on both poles of the scroll.
 - `prefers-reduced-motion` is honoured throughout: Lenis is not mounted, the
-  loader is skipped, the starfield renders one static frame and never starts a
-  loop, every entrance renders in its final state, and the scroll-linked
-  effects collapse to their resting values.
+  opening sequence is skipped (the sky is simply lit), the starfield renders
+  one static frame and never starts a loop, every entrance renders in its
+  final state, and the scroll-linked effects collapse to their resting values.
 - The starfield loop is stopped by an `IntersectionObserver` whenever its canvas
   leaves the viewport.
 

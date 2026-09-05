@@ -63,6 +63,7 @@ export default function Starfield({
   className = '',
   brightness = 1,
   seed = 1,
+  ignite = null,
 }) {
   const canvasRef = useRef(null);
   const starsRef = useRef([]);
@@ -78,6 +79,12 @@ export default function Starfield({
   // sixty times a second and nothing above this canvas notices.
   targetRef.current = density;
   valueRef.current = densityValue;
+  // Optional opening cue: { delay, spread } in seconds. Each point picks its
+  // own moment inside that window and stays dark until then — the ceiling
+  // comes up one point at a time, the way fiber does when the illuminator
+  // warms, rather than fading in as a sheet.
+  const igniteRef = useRef(ignite);
+  igniteRef.current = ignite;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -96,7 +103,11 @@ export default function Starfield({
     let raf = 0;
     let visible = true;
     let shots = [];
-    let nextShot = 800 + Math.random() * 2600;
+    // No streaks until the ceiling has finished coming up.
+    const igniteEnd = igniteRef.current
+      ? (igniteRef.current.delay + igniteRef.current.spread) * 1000 + 900
+      : 800;
+    let nextShot = igniteEnd + Math.random() * 2600;
     let last = performance.now();
     let elapsed = 0;
 
@@ -120,6 +131,7 @@ export default function Starfield({
       // the density rises fade on over ~0.7s instead of popping, which is what
       // fiber actually does when the illuminator warms up.
       born: -1,
+      ignite: igniteRef.current ? igniteRef.current.delay + rand() * igniteRef.current.spread : 0,
     });
     let lastCount = 0;
 
@@ -207,7 +219,11 @@ export default function Starfield({
       for (let i = 0; i < count; i += 1) {
         const star = stars[i];
         if (star.born < 0) star.born = elapsed;
-        const warm = reduced ? 1 : Math.min(1, (elapsed - star.born) / 0.7);
+        // A point waits for the later of its birth and its ignition cue, then
+        // warms on. Reduced motion skips the cue: everything is simply lit.
+        const cue = Math.max(star.born, reduced ? 0 : star.ignite);
+        if (elapsed < cue) continue;
+        const warm = reduced ? 1 : Math.min(1, (elapsed - cue) / 0.7);
         const twinkle = reduced
           ? star.base
           : star.base * (0.55 + 0.45 * Math.sin(elapsed * star.speed + star.phase));
