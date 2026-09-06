@@ -4,13 +4,20 @@
  * Copy lives next to its price on purpose: a translation can never drift away
  * from the row it describes, and the client changes both in one place. UI
  * chrome (buttons, labels, headlines) lives in src/i18n/dictionary.js instead.
+ *
+ * `from: true` marks a price that is a starting point rather than the figure
+ * the customer will pay. Everything that renders a price checks the flag and
+ * prefixes it, so a "from" price can never be shown as if it were exact — in
+ * the booking summary, the estimate, or the text message the shop receives.
+ *
+ * Prices last confirmed with the shop 2026-09-05.
  */
 
 export const STAR_KITS = [
   {
     id: 'stars-550',
     stars: 550,
-    price: 695,
+    price: 719,
     // Density used by the live starfield preview, not a sales number.
     en: { name: '550 Stars', note: 'The clean night. Even, calm, unmistakably custom.' },
     es: { name: '550 Estrellas', note: 'La noche limpia. Pareja, tranquila, inconfundiblemente custom.' },
@@ -25,7 +32,7 @@ export const STAR_KITS = [
   {
     id: 'stars-1100',
     stars: 1100,
-    price: 1050,
+    price: 1199,
     en: { name: '1,100 Stars', note: 'Full galaxy. Edge to edge, pillar to pillar.' },
     es: { name: '1,100 Estrellas', note: 'Galaxia completa. De borde a borde, de pilar a pilar.' },
   },
@@ -37,6 +44,25 @@ export const SHOOTING_STARS = {
   count: 10,
   en: { name: 'Shooting Stars — 10-Star Set', note: 'Ten timed streaks that cross the ceiling on their own.' },
   es: { name: 'Estrellas Fugaces — Set de 10', note: 'Diez trazos programados que cruzan el techo solos.' },
+};
+
+/**
+ * Galaxy glass. The price covers material and labour, and starts from the
+ * glass in the vehicle — a panoramic roof is not one size, so this is the only
+ * item on the list that cannot be quoted exactly from a web page.
+ */
+export const GALAXY_GLASS = {
+  id: 'galaxy-glass',
+  price: 999,
+  from: true,
+  en: {
+    name: 'Galaxy Glass',
+    note: 'Your panoramic roof, turned into a night sky. Material and labour included.',
+  },
+  es: {
+    name: 'Galaxy Glass',
+    note: 'Tu techo panorámico, convertido en cielo nocturno. Material y mano de obra incluidos.',
+  },
 };
 
 export const HEADLINER = [
@@ -68,7 +94,7 @@ export const PILLARS = [
 
 export const FLOW = {
   id: 'flow-series',
-  price: 500,
+  price: 599,
   en: {
     name: 'Flow Series Ambient Lighting',
     note: 'One system, sixteen million colors, controlled from your phone or your voice.',
@@ -119,9 +145,17 @@ export const FLOW_INCLUDES = [
 export const BOOKABLE = [
   ...STAR_KITS.map((s) => ({ ...s, group: 'starlight' })),
   { ...SHOOTING_STARS, group: 'starlight' },
+  { ...GALAXY_GLASS, group: 'starlight' },
   ...HEADLINER.map((s) => ({ ...s, group: 'headliner' })),
   ...PILLARS.map((s) => ({ ...s, group: 'headliner' })),
   { ...FLOW, group: 'flow' },
 ];
 
 export const findService = (id) => BOOKABLE.find((s) => s.id === id);
+
+/** True when the cart holds anything quoted from a starting price. */
+export const hasFromPrice = (ids = []) =>
+  ids.some((id) => {
+    const service = findService(id);
+    return Boolean(service && service.from);
+  });

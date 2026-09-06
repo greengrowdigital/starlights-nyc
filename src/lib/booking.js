@@ -1,5 +1,5 @@
 import { BOOKING, CONTACT } from '../config';
-import { findService } from '../data/services';
+import { findService, hasFromPrice } from '../data/services';
 import { dateKey, longDate, money, parseDateKey } from './format';
 
 /* -------------------------------------------------------------------------
@@ -78,13 +78,19 @@ export function summarize(request, lang = 'en') {
       const service = findService(id);
       if (!service) return null;
       const label = (service[lang] || service.en).name;
-      return `• ${label} — ${money(service.price, lang)}`;
+      // "from" items are marked here too: the shop reads this text, and a
+      // starting price that looks exact is how a quote turns into an argument.
+      const prefix = service.from ? (lang === 'es' ? 'desde ' : 'from ') : '';
+      return `• ${label} — ${prefix}${money(service.price, lang)}`;
     })
     .filter(Boolean);
 
   lines.push(...services);
   lines.push('');
-  lines.push(`Estimate: ${money(totalFor(request.services), lang)}`);
+  const approx = hasFromPrice(request.services);
+  lines.push(
+    `Estimate: ${approx ? 'from ' : ''}${money(totalFor(request.services), lang)}`,
+  );
 
   // request.date is a "YYYY-MM-DD" calendar day, not an instant — parsed back
   // in local time so the summary never names the day before the one tapped.

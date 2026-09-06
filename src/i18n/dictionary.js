@@ -78,6 +78,16 @@ export const dictionary = {
       cta: 'Add to my install',
     },
 
+    galaxy: {
+      label: 'Add-on',
+      title: 'Glass that',
+      titleItalic: 'holds a galaxy.',
+      lead: 'Your panoramic roof, turned into a night sky — the same fiber, set into the glass above your head.',
+      caption: 'Panoramic roof — starlight in the glass',
+      note: 'Roofs are not one size, so this one starts at a price instead of ending at one. Material and labour are included; we confirm the figure when we see the vehicle.',
+      cta: 'Add galaxy glass',
+    },
+
     headliner: {
       index: '02',
       label: 'Suede headliner wrap',
@@ -199,6 +209,7 @@ export const dictionary = {
       pickSlot: 'Pick a day and a time.',
       estimate: 'Estimate',
       estimateNote: 'Final price confirmed in person, before any work starts.',
+      fromNote: 'Your selection includes an item quoted from a starting price, so the final figure may be higher.',
       summary: 'Your request',
       confirmedTitle: 'Request received.',
       confirmedBody: 'We will text you at {phone} to lock the time. If you would rather reach us first:',
@@ -305,6 +316,16 @@ export const dictionary = {
       lead: 'Diez trazos programados que cruzan el techo solos. Se añaden a cualquier kit de estrellas.',
       unit: 'set de 10',
       cta: 'Añadir a mi instalación',
+    },
+
+    galaxy: {
+      label: 'Complemento',
+      title: 'Vidrio que',
+      titleItalic: 'guarda una galaxia.',
+      lead: 'Tu techo panorámico, convertido en cielo nocturno — la misma fibra, montada en el vidrio sobre tu cabeza.',
+      caption: 'Techo panorámico — estrellas en el vidrio',
+      note: 'Los techos no son de un solo tamaño, así que este parte de un precio en vez de cerrar en uno. Material y mano de obra incluidos; confirmamos la cifra al ver el vehículo.',
+      cta: 'Añadir galaxy glass',
     },
 
     headliner: {
@@ -426,6 +447,7 @@ export const dictionary = {
       pickSlot: 'Elige un día y una hora.',
       estimate: 'Estimado',
       estimateNote: 'El precio final se confirma en persona, antes de empezar.',
+      fromNote: 'Tu selección incluye un artículo con precio inicial, así que la cifra final puede ser mayor.',
       summary: 'Tu solicitud',
       confirmedTitle: 'Solicitud recibida.',
       confirmedBody: 'Te escribimos al {phone} para cerrar la hora. Si prefieres contactarnos tú:',

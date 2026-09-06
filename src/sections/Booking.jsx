@@ -5,7 +5,16 @@ import Section, { SectionHead } from '../components/Section';
 import Reveal from '../components/Reveal';
 import CalEmbed from '../components/CalEmbed';
 import { BOOKING, CONTACT } from '../config';
-import { FLOW, HEADLINER, PILLARS, SHOOTING_STARS, STAR_KITS, findService } from '../data/services';
+import {
+  FLOW,
+  GALAXY_GLASS,
+  HEADLINER,
+  PILLARS,
+  SHOOTING_STARS,
+  STAR_KITS,
+  findService,
+  hasFromPrice,
+} from '../data/services';
 import { useLang } from '../i18n/LanguageContext';
 import { useBooking } from '../hooks/useBooking';
 import {
@@ -58,6 +67,9 @@ export default function Booking() {
 
   const stepRef = useRef(null);
   const total = useMemo(() => totalFor(services), [services]);
+  // True while anything in the cart is quoted from a starting price — the
+  // estimate then has to read "From $x", never "$x".
+  const approx = useMemo(() => hasFromPrice(services), [services]);
   const usingCal = BOOKING.mode === 'calcom';
 
   // Move focus to the top of the new step so a keyboard or screen-reader user
@@ -226,6 +238,7 @@ export default function Booking() {
                     transition={{ duration: 0.35 }}
                     className="tnum type-title t-fg leading-none"
                   >
+                    {approx ? `${t.common.from} ` : ''}
                     {money(total, lang)}
                   </motion.span>
                 </div>
@@ -270,7 +283,10 @@ export default function Booking() {
       </Reveal>
 
       <Reveal delay={0.05}>
-        <p className="t-fg-faint mt-5 text-center text-[0.8125rem]">{t.booking.estimateNote}</p>
+        <p className="t-fg-faint mt-5 text-center text-[0.8125rem]">
+          {approx ? `${t.booking.fromNote} ` : ''}
+          {t.booking.estimateNote}
+        </p>
       </Reveal>
     </Section>
   );
@@ -330,7 +346,7 @@ function ServiceStep({ selected, onToggle, error }) {
   const { t, s } = useLang();
 
   const groups = [
-    { title: t.starlight.label, items: [...STAR_KITS, SHOOTING_STARS], exclusive: KIT_IDS },
+    { title: t.starlight.label, items: [...STAR_KITS, SHOOTING_STARS, GALAXY_GLASS], exclusive: KIT_IDS },
     { title: t.headliner.label, items: [...HEADLINER, ...PILLARS], exclusive: VEHICLE_IDS },
     { title: t.flow.label, items: [FLOW], exclusive: [] },
   ];
@@ -368,7 +384,7 @@ function ServiceStep({ selected, onToggle, error }) {
 }
 
 function ServiceRow({ item, copy, checked, onToggle, exclusive = [] }) {
-  const { lang } = useLang();
+  const { t, lang } = useLang();
   return (
     <label
       // The real control is visually hidden, so the label has to grow the focus
@@ -399,7 +415,9 @@ function ServiceRow({ item, copy, checked, onToggle, exclusive = [] }) {
         )}
       </span>
       <span className="t-fg min-w-0 flex-1 text-[0.9375rem] leading-snug">{copy.name}</span>
-      <span className="tnum t-fg-muted shrink-0 text-[0.875rem]">{money(item.price, lang)}</span>
+      <span className="tnum t-fg-muted shrink-0 text-[0.875rem]">
+        <Price item={item} lang={lang} t={t} />
+      </span>
     </label>
   );
 }
@@ -559,6 +577,7 @@ function SlotStep({ date, time, onDate, onTime, error }) {
 
 function DetailsStep({ values, errors, onChange, date, time, services, total }) {
   const { t, s, lang } = useLang();
+  const approx = hasFromPrice(services);
 
   return (
     <div className="grid gap-9 lg:grid-cols-[1fr_18rem] lg:gap-12">
@@ -627,7 +646,7 @@ function DetailsStep({ values, errors, onChange, date, time, services, total }) 
               <li key={id} className="flex items-baseline justify-between gap-3">
                 <span className="t-fg-strong text-[0.875rem] leading-snug">{s(item).name}</span>
                 <span className="tnum t-fg-muted shrink-0 text-[0.8125rem]">
-                  {money(item.price, lang)}
+                  <Price item={item} lang={lang} t={t} />
                 </span>
               </li>
             );
@@ -643,7 +662,10 @@ function DetailsStep({ values, errors, onChange, date, time, services, total }) 
 
         <div className="t-line mt-4 flex items-baseline justify-between border-t pt-4">
           <span className="label-mono t-fg-faint">{t.booking.estimate}</span>
-          <span className="tnum t-fg text-[1.125rem] font-medium">{money(total, lang)}</span>
+          <span className="tnum t-fg text-[1.125rem] font-medium">
+            {approx ? `${t.common.from} ` : ''}
+            {money(total, lang)}
+          </span>
         </div>
       </aside>
     </div>
@@ -761,6 +783,20 @@ function Field({
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * One price. Items flagged `from` in src/data/services.js are prefixed, so a
+ * starting figure is never shown as though it were the final one.
+ */
+function Price({ item, lang, t }) {
+  if (!item.from) return money(item.price, lang);
+  return (
+    <>
+      <span className="label-mono t-fg-faint mr-1">{t.common.from}</span>
+      {money(item.price, lang)}
+    </>
   );
 }
 

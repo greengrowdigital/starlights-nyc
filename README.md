@@ -139,17 +139,26 @@ own English and Spanish copy next to its price, so a translation can never
 drift from the item it describes. Changing a price there updates the product
 cards, the configurators, the booking summary and the SMS/email body.
 
+Last confirmed with the shop **2026-09-05**.
+
 | Item | Price |
 |---|---|
-| Starlight ceiling — 550 stars | $695 |
+| Starlight ceiling — 550 stars | $719 |
 | Starlight ceiling — 800 stars | $850 |
-| Starlight ceiling — 1,100 stars | $1,050 |
+| Starlight ceiling — 1,100 stars | $1,199 |
 | Shooting stars (10-star set) | $275 |
+| **Galaxy glass** | **from $999** |
 | Suede headliner — Coupe | $400 |
 | Suede headliner — Sedan | $600 |
 | Suede headliner — SUV | $700 |
 | A / B / C pillars | $50 each |
-| Flow Series ambient lighting | $500 |
+| Flow Series ambient lighting | $599 |
+
+An item can set `from: true` in `services.js`. Every place a price is rendered
+checks the flag and prefixes it — the picker row, the booking summary, the
+running estimate, and the text message the shop receives — so a starting price
+is never shown as if it were the final one. `hasFromPrice(ids)` reports whether
+a cart contains any of them.
 
 ---
 

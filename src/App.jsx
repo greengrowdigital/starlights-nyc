@@ -10,6 +10,7 @@ import Hero from './sections/Hero';
 import Manifesto from './sections/Manifesto';
 import Starlight from './sections/Starlight';
 import ShootingStars from './sections/ShootingStars';
+import GalaxyGlass from './sections/GalaxyGlass';
 import Headliner from './sections/Headliner';
 import FlowSeries from './sections/FlowSeries';
 import Why from './sections/Why';
@@ -30,6 +31,7 @@ import Footer from './sections/Footer';
  *   Manifesto     light   the idea
  *   Starlight     dark    kits + live preview
  *   ShootingStars dark    the add-on that has to be seen moving
+ *   GalaxyGlass   dark    the panoramic roof, priced from
  *   Headliner     light   suede + pillar diagram
  *   FlowSeries    dark    the only colour on the site
  *   Why           smoke   four reasons
@@ -52,6 +54,7 @@ export default function App() {
             <Manifesto />
             <Starlight />
             <ShootingStars />
+            <GalaxyGlass />
             <Headliner />
             <FlowSeries />
             <Why />
