@@ -163,25 +163,27 @@ someone chose it. All UI copy is in `src/i18n/dictionary.js`.
 
 ---
 
-## Adding photography
+## Media
 
-The client's photos are not in yet, so every image position renders as a
-deliberate, on-brand plate — never a stock photo of somebody else's car.
+Everything the shop sent lives in `public/media/` — 11 photos (`photo-01.jpg`
+… `photo-11.jpg`) and 28 clips (`clip-01.mp4` … `clip-28.mp4`), all portrait
+phone footage, WhatsApp-compressed (0.2–1.5 MB per clip). `public/logo.jpeg` is
+the emblem, used as the nav badge, the footer mark, the gallery's text tile and
+the touch icon.
 
-Each slot already reserves its exact aspect ratio, so **dropping in real photos
-cannot shift the layout**. To fill one, pass `src` and a real `alt`:
+- **The reel** (`src/sections/Reel.jsx`) is a five-panel wall of clips. Each
+  panel has a rotation (`PANELS`) and is double-buffered — two `<video>`s, one
+  playing, one holding the next clip — so the wall never exceeds ten video
+  elements and only two clips are ever in flight per panel. Nothing loads until
+  the wall is first in view, and everything pauses when it leaves. Reorder or
+  swap clips by editing `PANELS`.
+- **The gallery** (`src/sections/Gallery.jsx`) takes its photos and captions
+  from `PHOTOS`; the first entry is the 2×2 hero frame. Every frame is 3:4, so
+  swapping a photo cannot shift the layout.
+- **The headliner** section shows `photo-04.jpg` (a finished, lit headliner).
 
-```jsx
-<Placeholder ratio="16 / 10" src="/photos/ceiling-01.jpg" alt="Starlight ceiling in a BMW 4 Series" />
-```
-
-Slots waiting on photography:
-
-- `src/sections/Gallery.jsx` — five slots, one hero frame + one vertical + three supporting
-- `src/sections/Headliner.jsx` — one suede close-up
-
-The **logo** goes in `public/` and replaces the `StarMark` SVG in
-`src/components/Nav.jsx` (and, if wanted, `public/favicon.svg`).
+Unused clips ship in `public/media/` so they can be rotated in without a
+re-upload; they cost nothing at runtime.
 
 ---
 

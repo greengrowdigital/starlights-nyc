@@ -163,7 +163,15 @@ export default function Nav() {
             aria-label="STARLIGHTS.NYC — home"
             {...arrive(INTRO.brand)}
           >
-            <StarMark />
+            {/* The shop's emblem, cropped to its disc. It carries its own black
+                ground, so it reads as a badge on the white sections too. */}
+            <img
+              src="/logo.jpeg"
+              alt=""
+              width="28"
+              height="28"
+              className="h-7 w-7 rounded-full object-cover ring-1 ring-white/15"
+            />
             <span
               className="text-[0.82rem] font-semibold"
               style={{ fontFamily: 'var(--font-display)', letterSpacing: '0.16em' }}
@@ -312,10 +320,3 @@ export default function Nav() {
   );
 }
 
-function StarMark() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="currentColor">
-      <path d="M12 1.5l2.2 7.3 7.3 2.2-7.3 2.2L12 20.5l-2.2-7.3L2.5 11l7.3-2.2z" />
-    </svg>
-  );
-}

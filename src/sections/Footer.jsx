@@ -42,6 +42,16 @@ export default function Footer() {
       </div>
 
       <Container>
+        <Reveal>
+          <img
+            src="/logo.jpeg"
+            alt="NYC Starlights — Illuminate your drive"
+            width="112"
+            height="112"
+            loading="lazy"
+            className="mb-8 h-24 w-24 rounded-full object-cover shadow-[0_0_60px_-10px_rgb(255_244_214/0.45)] ring-1 ring-white/15 sm:h-28 sm:w-28"
+          />
+        </Reveal>
         <MaskText
           as="h2"
           text={t.footer.title}

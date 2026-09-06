@@ -72,9 +72,15 @@ export default function Headliner() {
           <ScrollScale>
             <Placeholder
               ratio="16 / 10"
+              src="/media/photo-04.jpg"
+              alt={t.headliner.photoCaption}
               label={t.headliner.photoLabel}
               caption={t.headliner.photoCaption}
-            />
+            >
+              <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-10">
+                <span className="label-mono text-white/75">{t.headliner.photoCaption}</span>
+              </figcaption>
+            </Placeholder>
           </ScrollScale>
         </div>
 

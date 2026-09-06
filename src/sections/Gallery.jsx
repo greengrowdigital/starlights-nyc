@@ -7,25 +7,28 @@ import Placeholder from '../components/Placeholder';
 import { useLang } from '../i18n/LanguageContext';
 
 /**
- * The gallery is built as an editorial grid rather than a uniform tile wall, so
- * that when real photography lands it already has a hierarchy: one hero frame,
- * one vertical, three supporting shots.
+ * The work, in the shop's own photographs.
  *
- * Every frame grows into place as it enters (ScrollScale), and the vertical
- * one drifts against the scroll a little — the two columns moving at slightly
- * different speeds is what makes a flat grid read as a wall you are walking
- * past rather than a page you are paging.
+ * Everything was shot on a phone, upright, so the grid is built for portrait:
+ * five columns of 3:4 frames with one 2x2 hero frame, and a text tile carrying
+ * the emblem where the eleventh photo would have gone. Frames grow into place
+ * as they enter, and alternate columns drift against the scroll, so the grid
+ * reads as a wall you walk past rather than a page you page.
  *
- * Every slot reserves its exact aspect ratio right now, which means dropping in
- * the client's photos later cannot shift a single pixel of this layout.
- * Replace a slot by passing `src` (and a real `alt`) — nothing else changes.
+ * Every frame reserves its aspect ratio, so swapping a photo can never shift
+ * the layout. Order is by strength: the dash-and-stars shot leads.
  */
-const SLOTS = [
-  { id: 'hero', ratio: '16 / 10', span: 'lg:col-span-7', drift: 0, en: 'Starlight ceiling — full install', es: 'Techo estrellado — instalación completa' },
-  { id: 'tall', ratio: '4 / 5', span: 'lg:col-span-5', drift: 1, en: 'Suede headliner detail', es: 'Detalle del forrado en gamuza' },
-  { id: 'a', ratio: '4 / 3', span: 'lg:col-span-4', drift: 0, en: 'Shooting stars in motion', es: 'Estrellas fugaces en movimiento' },
-  { id: 'b', ratio: '4 / 3', span: 'lg:col-span-4', drift: 0.5, en: 'Flow Series — doors lit', es: 'Flow Series — puertas encendidas' },
-  { id: 'c', ratio: '4 / 3', span: 'lg:col-span-4', drift: 0, en: 'Footwell + dash at night', es: 'Pisos y tablero de noche' },
+const PHOTOS = [
+  { src: '/media/photo-11.jpg', big: true, en: 'Flow Series dash, starlight ceiling', es: 'Tablero Flow Series, techo estrellado' },
+  { src: '/media/photo-07.jpg', en: 'Starlight over red leather', es: 'Estrellas sobre cuero rojo' },
+  { src: '/media/photo-10.jpg', en: 'Console trim, lit', es: 'Consola con la moldura encendida' },
+  { src: '/media/photo-06.jpg', en: 'Ceiling with violet accents', es: 'Techo con acentos violeta' },
+  { src: '/media/photo-02.jpg', en: 'Dash strip, magenta', es: 'Tira del tablero, magenta' },
+  { src: '/media/photo-01.jpg', en: 'Footwell and dash, green', es: 'Pisos y tablero, verde' },
+  { src: '/media/photo-03.jpg', en: 'Daylight, dash in blue', es: 'De día, tablero en azul' },
+  { src: '/media/photo-09.jpg', en: 'Door card trim, blue', es: 'Moldura de puerta, azul' },
+  { src: '/media/photo-08.jpg', en: 'Trim on the bench — install in progress', es: 'Moldura en el banco — instalación en proceso' },
+  { src: '/media/photo-05.jpg', en: 'Ambient, low', es: 'Ambiental, en bajo' },
 ];
 
 export default function Gallery() {
@@ -37,10 +40,8 @@ export default function Gallery() {
     target: ref,
     offset: ['start end', 'end start'],
   });
-  // Full drift for the vertical frame, half for one of the small ones, so the
-  // grid has three speeds instead of two.
-  const driftFull = useTransform(scrollYProgress, [0, 1], [reduced ? 0 : 36, reduced ? 0 : -36]);
-  const driftHalf = useTransform(scrollYProgress, [0, 1], [reduced ? 0 : 18, reduced ? 0 : -18]);
+  const driftA = useTransform(scrollYProgress, [0, 1], [reduced ? 0 : 28, reduced ? 0 : -28]);
+  const driftB = useTransform(scrollYProgress, [0, 1], [reduced ? 0 : -16, reduced ? 0 : 16]);
 
   return (
     <Section id="work" theme="dark">
@@ -52,22 +53,47 @@ export default function Gallery() {
         lead={t.gallery.lead}
       />
 
-      <div ref={ref} className="mt-[clamp(2.5rem,7vh,4rem)] grid gap-4 lg:grid-cols-12">
-        {SLOTS.map((slot) => {
-          const y = slot.drift === 1 ? driftFull : slot.drift === 0.5 ? driftHalf : undefined;
+      <div ref={ref} className="mt-[clamp(2.5rem,7vh,4rem)] grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">
+        {PHOTOS.map((photo, i) => {
+          const caption = lang === 'es' ? photo.es : photo.en;
+          const col = i % 5;
+          const y = col % 2 ? driftB : driftA;
           return (
-            <motion.div key={slot.id} className={slot.span} style={y ? { y } : undefined}>
+            <motion.div
+              key={photo.src}
+              className={photo.big ? 'col-span-2 row-span-2' : ''}
+              style={{ y }}
+            >
               <ScrollScale className="h-full" from={0.94} dim={0.5}>
                 <Placeholder
-                  ratio={slot.ratio}
-                  label={t.gallery.placeholder}
-                  caption={lang === 'es' ? slot.es : slot.en}
+                  ratio={photo.big ? '3 / 4' : '3 / 4'}
+                  src={photo.src}
+                  alt={caption}
                   className="hover-lift h-full"
-                />
+                >
+                  <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-10">
+                    <span className="label-mono text-white/75">{caption}</span>
+                  </figcaption>
+                </Placeholder>
               </ScrollScale>
             </motion.div>
           );
         })}
+
+        {/* The eleventh cell: the shop's own mark and its line. */}
+        <motion.div className="col-span-2 sm:col-span-1 lg:col-span-1" style={{ y: driftB }}>
+          <ScrollScale className="h-full" from={0.94} dim={0.5}>
+            <div className="t-line flex aspect-[3/4] h-full flex-col items-center justify-center gap-5 rounded-[var(--radius-card)] border bg-white/[0.03] p-6 text-center">
+              <img
+                src="/logo.jpeg"
+                alt="NYC Starlights"
+                className="h-24 w-24 rounded-full object-cover shadow-[0_0_40px_-8px_rgb(255_244_214/0.5)]"
+                loading="lazy"
+              />
+              <span className="label-mono t-fg-muted">{t.gallery.tagline}</span>
+            </div>
+          </ScrollScale>
+        </motion.div>
       </div>
 
       <Reveal delay={0.08}>

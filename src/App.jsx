@@ -13,6 +13,7 @@ import ShootingStars from './sections/ShootingStars';
 import Headliner from './sections/Headliner';
 import FlowSeries from './sections/FlowSeries';
 import Why from './sections/Why';
+import Reel from './sections/Reel';
 import Gallery from './sections/Gallery';
 import Booking from './sections/Booking';
 import Footer from './sections/Footer';
@@ -32,7 +33,8 @@ import Footer from './sections/Footer';
  *   Headliner     light   suede + pillar diagram
  *   FlowSeries    dark    the only colour on the site
  *   Why           smoke   four reasons
- *   Gallery       dark    the work (photo slots)
+ *   Reel          dark    the wall of clips from the bay
+ *   Gallery       dark    the work, in the shop's photographs
  *   Booking       light   three-step request
  *   Footer        dark    back under the sky
  */
@@ -53,6 +55,7 @@ export default function App() {
             <Headliner />
             <FlowSeries />
             <Why />
+            <Reel />
             <Gallery />
             <Booking />
           </main>

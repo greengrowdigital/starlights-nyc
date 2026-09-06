@@ -89,8 +89,8 @@ export const dictionary = {
       pillarNote: '+$50 each',
       total: 'Your headliner',
       cta: 'Book this wrap',
-      photoLabel: 'Suede detail',
-      photoCaption: 'Close-up of a finished wrap — client photo',
+      photoLabel: 'Headliner, lit',
+      photoCaption: 'A finished starlight headliner — from the shop',
     },
 
     flow: {
@@ -141,18 +141,33 @@ export const dictionary = {
       ],
     },
 
-    gallery: {
+    reel: {
       index: '05',
+      label: 'From the bay',
+      title: 'Real cars.',
+      titleItalic: 'Real ceilings.',
+      lead: 'Phone footage from the shop floor — no renders, no stock. Every ceiling and every strip here was installed by us.',
+      themes: {
+        stars: 'Starlight ceiling',
+        flow: 'Flow Series',
+        interior: 'Full interior',
+        ambient: 'Ambient lighting',
+      },
+    },
+
+    gallery: {
+      index: '06',
       label: 'Selected work',
       title: 'The',
       titleItalic: 'work.',
       lead: 'Real installs, real ceilings — straight out of the shop.',
       placeholder: 'Client photo',
-      soon: 'Photography coming soon',
+      tagline: 'Illuminate your drive',
+      soon: 'More photography as installs roll out',
     },
 
     booking: {
-      index: '06',
+      index: '07',
       label: 'Book your install',
       title: 'Pick a day.',
       titleItalic: 'We handle the rest.',
@@ -303,8 +318,8 @@ export const dictionary = {
       pillarNote: '+$50 cada uno',
       total: 'Tu forrado',
       cta: 'Agendar el forrado',
-      photoLabel: 'Detalle de la gamuza',
-      photoCaption: 'Acercamiento de un forrado terminado — foto del cliente',
+      photoLabel: 'Techo terminado, encendido',
+      photoCaption: 'Un headliner estrellado terminado — del taller',
     },
 
     flow: {
@@ -353,18 +368,33 @@ export const dictionary = {
       ],
     },
 
-    gallery: {
+    reel: {
       index: '05',
+      label: 'Desde el taller',
+      title: 'Carros reales.',
+      titleItalic: 'Techos reales.',
+      lead: 'Video de teléfono grabado en el taller — sin renders, sin stock. Cada techo y cada tira de aquí la instalamos nosotros.',
+      themes: {
+        stars: 'Techo estrellado',
+        flow: 'Flow Series',
+        interior: 'Interior completo',
+        ambient: 'Iluminación ambiental',
+      },
+    },
+
+    gallery: {
+      index: '06',
       label: 'Trabajos seleccionados',
       title: 'El',
       titleItalic: 'trabajo.',
       lead: 'Instalaciones reales, techos reales — directo del taller.',
       placeholder: 'Foto del cliente',
-      soon: 'Fotografía próximamente',
+      tagline: 'Illuminate your drive',
+      soon: 'Más fotos conforme salgan instalaciones',
     },
 
     booking: {
-      index: '06',
+      index: '07',
       label: 'Agenda tu instalación',
       title: 'Elige el día.',
       titleItalic: 'Del resto nos encargamos.',
