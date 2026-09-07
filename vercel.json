@@ -1,3 +1,9 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "comment": "SPA fallback for everything EXCEPT the serverless functions. Without the negative lookahead this catch-all swallows /api/* and the booking endpoints return the HTML shell.",
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
 }

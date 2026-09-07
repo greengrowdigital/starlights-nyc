@@ -29,6 +29,7 @@ import {
   totalFor,
 } from '../lib/booking';
 import { dateKey, longDate, money, monthLabel, sameDay, weekdayInitials } from '../lib/format';
+import { dayIsOpen, fetchAvailability, slotsForDay } from '../lib/availability';
 import { scrollToEl } from '../lib/scroll';
 
 const KIT_IDS = STAR_KITS.map((k) => k.id);
@@ -55,7 +56,10 @@ export default function Booking() {
 
   const [step, setStep] = useState(0);
   const [date, setDate] = useState(null);
+  // The label the customer reads, and the exact instant Cal handed us for it.
+  // Only the instant can be booked; the label alone is for the fallback path.
   const [time, setTime] = useState('');
+  const [slotStart, setSlotStart] = useState(null);
   const [details, setDetails] = useState({ name: '', phone: '', email: '', vehicle: '', notes: '' });
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState('idle'); // idle | sending | done
@@ -113,10 +117,24 @@ export default function Booking() {
       // A calendar day, not an instant — see lib/format.js#dateKey.
       date: date ? dateKey(date) : null,
       time,
+      slotStart,
       ...details,
     };
 
     const result = await submitBooking(request, lang);
+
+    // Someone took the slot while this customer was typing. Send them back to
+    // step two with the reason, rather than confirming a time they do not have.
+    if (result && result.ok === false && result.reason === 'slot_taken') {
+      setStatus('idle');
+      setTime('');
+      setSlotStart(null);
+      setDir(-1);
+      setStep(1);
+      setErrors({ slot: t.booking.slotTaken });
+      return;
+    }
+
     // Whether the request actually reached the shop decides what we are allowed
     // to promise on the next screen. With no webhook configured, nothing was
     // delivered, and telling the customer "we'll text you" would be a lie.
@@ -137,6 +155,7 @@ export default function Booking() {
     setStep(0);
     setDate(null);
     setTime('');
+    setSlotStart(null);
     setDetails({ name: '', phone: '', email: '', vehicle: '', notes: '' });
     setServices([]);
   };
@@ -201,8 +220,12 @@ export default function Booking() {
                         onDate={(d) => {
                           setDate(d);
                           setTime('');
+                          setSlotStart(null);
                         }}
-                        onTime={setTime}
+                        onTime={(slot) => {
+                          setTime(slot.label);
+                          setSlotStart(slot.start);
+                        }}
                         error={errors.slot}
                       />
                     ))}
@@ -422,12 +445,28 @@ function ServiceRow({ item, copy, checked, onToggle, exclusive = [] }) {
   );
 }
 
+/**
+ * Step two: when can you drop the car off?
+ *
+ * The calendar shows the shop's real Cal.com availability. /api/slots is asked
+ * for the visible month, and days with no free slot are simply unclickable —
+ * so a customer can never pick a time the shop cannot take, and the shop
+ * changes its hours in Cal rather than in this repo.
+ *
+ * If that call cannot be answered — a local preview with no serverless
+ * functions, a deploy before the env vars are set, a Cal outage — the step
+ * falls back to the fixed schedule in src/config.js and carries on. A booking
+ * form that shows an error because a calendar API is down is worse than one
+ * that shows sensible hours and lets the shop confirm by text.
+ */
 function SlotStep({ date, time, onDate, onTime, error }) {
   const { t, lang } = useLang();
   const [cursor, setCursor] = useState(() => {
     const start = earliestDate();
     return new Date(start.getFullYear(), start.getMonth(), 1);
   });
+  const [availability, setAvailability] = useState({ live: false, days: {} });
+  const [loading, setLoading] = useState(true);
 
   const cells = useMemo(
     () => buildMonth(cursor.getFullYear(), cursor.getMonth()),
@@ -443,17 +482,29 @@ function SlotStep({ date, time, onDate, onTime, error }) {
   const move = (delta) =>
     setCursor((c) => new Date(c.getFullYear(), c.getMonth() + delta, 1));
 
-  // Hide slots that have already passed when the customer picks today.
-  const slots = useMemo(() => {
-    if (!date || !sameDay(date, new Date())) return BOOKING.timeSlots;
-    const now = new Date();
-    return BOOKING.timeSlots.filter((slot) => {
-      const [clock, meridiem] = slot.split(' ');
-      const [h, m] = clock.split(':').map(Number);
-      const hour = (h % 12) + (meridiem === 'PM' ? 12 : 0);
-      return hour > now.getHours() || (hour === now.getHours() && m > now.getMinutes());
+  // Ask for exactly the span the grid draws — six weeks, including the days
+  // either side of the month — so every cell on screen has an answer.
+  useEffect(() => {
+    if (!cells.length) return undefined;
+    const controller = new AbortController();
+    let live = true;
+    setLoading(true);
+
+    fetchAvailability(cells[0].date, cells[cells.length - 1].date, {
+      signal: controller.signal,
+    }).then((result) => {
+      if (!live) return;
+      setAvailability(result);
+      setLoading(false);
     });
-  }, [date]);
+
+    return () => {
+      live = false;
+      controller.abort();
+    };
+  }, [cells]);
+
+  const slots = useMemo(() => slotsForDay(date, availability), [date, availability]);
 
   return (
     <div>
@@ -484,7 +535,11 @@ function SlotStep({ date, time, onDate, onTime, error }) {
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-7 gap-1">
+          <div
+            className="mt-5 grid grid-cols-7 gap-1 transition-opacity duration-300"
+            style={{ opacity: loading ? 0.45 : 1 }}
+            aria-busy={loading}
+          >
             {initials.map((day, i) => (
               <span
                 key={`${day}-${i}`}
@@ -497,7 +552,7 @@ function SlotStep({ date, time, onDate, onTime, error }) {
 
             {cells.map((cell) => {
               const active = sameDay(cell.date, date);
-              const usable = cell.bookable && cell.inMonth;
+              const usable = cell.inMonth && dayIsOpen(cell.date, availability);
               return (
                 <button
                   key={cell.key}
@@ -528,13 +583,17 @@ function SlotStep({ date, time, onDate, onTime, error }) {
         <div>
           <span className="label-mono t-fg-faint">{t.booking.chooseTime}</span>
 
-          {!date && (
+          {loading && !date && (
+            <p className="t-fg-faint mt-4 text-[0.875rem]">{t.booking.loadingSlots}</p>
+          )}
+
+          {!loading && !date && (
             <p className="t-fg-faint mt-4 text-[0.875rem]">{t.booking.pickDayFirst}</p>
           )}
 
-          {/* Closed days are already unclickable in the grid, so an empty slot
-              list can only mean today's remaining times have passed — saying
-              "closed" here would contradict the calendar next to it. */}
+          {/* Days with nothing free are already unclickable, so an empty list
+              here can only mean today's remaining times have passed — saying
+              "closed" would contradict the calendar beside it. */}
           {date && slots.length === 0 && (
             <p className="t-fg-faint mt-4 text-[0.875rem]">{t.booking.noSlotsToday}</p>
           )}
@@ -546,10 +605,10 @@ function SlotStep({ date, time, onDate, onTime, error }) {
               </p>
               <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                 {slots.map((slot) => {
-                  const active = slot === time;
+                  const active = slot.label === time;
                   return (
                     <button
-                      key={slot}
+                      key={slot.start || slot.label}
                       type="button"
                       onClick={() => onTime(slot)}
                       aria-pressed={active}
@@ -560,7 +619,7 @@ function SlotStep({ date, time, onDate, onTime, error }) {
                         color: active ? 'rgb(var(--bg))' : 'rgb(var(--fg) / 0.85)',
                       }}
                     >
-                      {slot}
+                      {slot.label}
                     </button>
                   );
                 })}

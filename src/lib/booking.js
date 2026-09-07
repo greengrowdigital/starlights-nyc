@@ -127,10 +127,17 @@ export const mailtoHref = (request, lang = 'en') => {
 /**
  * Send the request.
  *
- * With no endpoint configured this still resolves successfully: the flow is
- * designed so the confirmation screen always hands the customer a one-tap
- * SMS/email fallback. The site is therefore useful the day it ships, and
- * wiring a webhook later changes one env var, not a component.
+ * Three delivery paths, tried in order of how much they are worth:
+ *  1. /api/book — writes a real booking onto the shop's Cal.com calendar, so
+ *     the slot is held and Cal sends its own confirmations.
+ *  2. VITE_BOOKING_ENDPOINT — an optional webhook (n8n, Zapier, a sheet).
+ *  3. Nothing — the confirmation screen then says so plainly and hands the
+ *     customer a one-tap SMS/email carrying the same summary.
+ *
+ * The one case that is NOT a fallback is a slot someone else took while this
+ * customer was filling in their details. Quietly dropping to SMS there would
+ * leave them believing they hold a time that is gone, so it is returned as a
+ * distinct outcome for the form to act on.
  */
 export async function submitBooking(request, lang = 'en') {
   const payload = {
@@ -142,22 +149,46 @@ export async function submitBooking(request, lang = 'en') {
     submittedAt: new Date().toISOString(),
   };
 
-  if (!BOOKING.endpoint) {
-    return { ok: true, delivered: false, payload };
+  // 1. The calendar itself, when the chosen slot carries a real instant.
+  if (request.slotStart) {
+    try {
+      const response = await fetch('/api/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, start: request.slotStart }),
+      });
+
+      if (response.ok) {
+        const data = await response.json().catch(() => null);
+        return { ok: true, delivered: true, booked: true, uid: data?.uid || null, payload };
+      }
+
+      if (response.status === 409) {
+        return { ok: false, reason: 'slot_taken', payload };
+      }
+      // 503 means Cal is not configured on this deploy; anything else is an
+      // outage. Either way, fall through to the paths below.
+    } catch {
+      // Offline or no /api here — fall through.
+    }
   }
 
-  try {
-    const response = await fetch(BOOKING.endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    return { ok: true, delivered: response.ok, payload };
-  } catch {
-    // A dead webhook must never cost us the lead — fall through to the
-    // confirmation screen with its SMS/email fallback intact.
-    return { ok: true, delivered: false, payload };
+  // 2. The optional webhook.
+  if (BOOKING.endpoint) {
+    try {
+      const response = await fetch(BOOKING.endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      return { ok: true, delivered: response.ok, payload };
+    } catch {
+      // A dead webhook must never cost us the lead.
+    }
   }
+
+  // 3. Nothing reached the shop — the confirmation screen will say so.
+  return { ok: true, delivered: false, payload };
 }
 
 /* -------------------------------------------------------------------------

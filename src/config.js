@@ -31,19 +31,38 @@ export const CONTACT = {
  *                   dependency, no key.
  */
 export const BOOKING = {
+  /**
+   * 'native' keeps the site's own three-step flow. That is the right mode even
+   * with Cal.com connected: the form knows what the visitor configured while
+   * scrolling, and an iframe would throw that away. Cal is wired in behind it
+   * — /api/slots supplies the real availability and /api/book writes the real
+   * booking — so the shop still sees everything in its Cal dashboard.
+   *
+   * 'calcom' swaps step two for the Cal embed instead. Kept for the case where
+   * the shop would rather manage the whole booking screen from Cal.
+   */
   mode: 'native',
 
   // Optional webhook (n8n, Zapier, Formspree, a serverless route...). When set,
   // the request payload is POSTed here as JSON before the confirmation screen.
   endpoint: import.meta.env.VITE_BOOKING_ENDPOINT || '',
 
+  // Only read when mode === 'calcom'. The API key is NOT here on purpose:
+  // anything with a VITE_ prefix is inlined into the public bundle. The key
+  // lives in CAL_API_KEY, server-side, read by /api/*.
   calcom: {
-    link: import.meta.env.VITE_CALCOM_LINK || 'starlights-nyc/install',
+    link: import.meta.env.VITE_CALCOM_LINK || 'nycstarlights/install',
     theme: 'dark',
   },
 
-  // Shop availability used to build the calendar.
-  // 0 = Sunday ... 6 = Saturday
+  /**
+   * Fallback schedule, used only when /api/slots cannot answer — a local
+   * preview with no serverless functions, or a Cal outage. When Cal responds,
+   * its availability wins and these values are ignored entirely, so the shop
+   * changes its hours in Cal.com and not here.
+   *
+   * 0 = Sunday ... 6 = Saturday
+   */
   openDays: [1, 2, 3, 4, 5, 6],
   timeSlots: ['9:00 AM', '11:00 AM', '1:00 PM', '3:00 PM', '5:00 PM'],
 

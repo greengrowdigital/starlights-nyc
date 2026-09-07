@@ -114,21 +114,48 @@ Payload shape:
 }
 ```
 
+### Cal.com (connected)
+
+The shop's calendar is live behind the native flow — the form keeps its own
+three steps, and Cal supplies the availability and receives the booking.
+
+| | |
+|---|---|
+| Account | `nycstarlights` (nycstarlights@gmail.com) |
+| Event type | **Starlight Install — Drop-off**, id `6967171`, slug `install`, 120 min |
+| Timezone | `America/New_York` |
+| Hours | Set in Cal.com, not in this repo |
+
+Two serverless functions do the talking, so the API key never reaches the
+browser:
+
+- **`GET /api/slots?start=&end=`** — the real availability for a date range,
+  grouped by day as `{ label, start }`. `label` is what the customer reads,
+  formatted in the shop's timezone; `start` is the exact instant handed back at
+  booking time, so a customer in another timezone cannot book an hour they did
+  not mean. Days with nothing free are unclickable in the calendar.
+- **`POST /api/book`** — writes the booking onto the calendar, with the service
+  list, estimate, vehicle and phone in the notes.
+
+**If Cal cannot be reached** — a local `vite preview` with no functions, a
+deploy before the env vars are set, an outage — the form falls back to the
+fixed schedule in `src/config.js` and the SMS/email path. A booking form that
+errors because a calendar API is down is worse than one that shows sensible
+hours and lets the shop confirm by text.
+
+**If someone books the slot first**, the customer is sent back to step two with
+that reason rather than being told a time is theirs when it is not.
+
+The env vars are in `.env.example`. **None of them carry a `VITE_` prefix** —
+Vite inlines those into the public bundle, so a key named `VITE_CAL_API_KEY`
+would be readable by anyone who opened the site.
+
 ### `mode: 'calcom'`
 
-Swaps step two for a real Cal.com calendar. Two lines, no npm install — the
-embed script is fetched at runtime only in this mode:
-
-```js
-// src/config.js
-export const BOOKING = {
-  mode: 'calcom',
-  calcom: { link: 'starlights-nyc/install', theme: 'dark' },
-  …
-}
-```
-
-or set `VITE_CALCOM_LINK` in the environment.
+Still available in `src/config.js`: swaps step two for the Cal embed instead of
+the site's own calendar. Kept for the case where the shop would rather manage
+the whole booking screen from Cal. No npm install — the embed script is fetched
+at runtime only in that mode.
 
 ---
 
