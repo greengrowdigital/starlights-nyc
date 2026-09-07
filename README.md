@@ -286,9 +286,23 @@ either pole of the scroll:
 ## Deploy
 
 Vercel, framework preset **Vite**, build `npm run build`, output `dist`.
-`vercel.json` already contains the SPA rewrite. No environment variables are
-required; add `VITE_BOOKING_ENDPOINT` only if the shop wants requests captured
-server-side.
+Pushing to `main` deploys.
+
+`vercel.json` carries one rewrite, and the shape of it matters:
+
+```json
+{ "source": "/((?!api/).*)", "destination": "/index.html" }
+```
+
+The negative lookahead keeps the SPA fallback away from `/api/*`. A plain
+`/(.*)` catch-all swallows the serverless functions and the booking endpoints
+answer with the HTML shell instead of JSON. `vercel.json` is also schema-checked
+on deploy and rejects unknown keys — including `comment`, so it cannot document
+that itself.
+
+Environment variables live in Vercel → Settings → Environment Variables; see
+`.env.example` for the four Cal.com ones. The site still builds and runs with
+none of them set.
 
 ---
 
