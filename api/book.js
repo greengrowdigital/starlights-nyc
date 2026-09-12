@@ -1,4 +1,4 @@
-import { VERSION, cal, configured, eventTypeId, fail, SHOP_TZ } from './_cal.js';
+import { SHOP_TZ, VERSION, cal, configured, fail, withEventType } from './_cal.js';
 
 /**
  * POST /api/book
@@ -52,29 +52,33 @@ export default async function handler(req, res) {
     .slice(0, 4000);
 
   try {
-    const result = await cal('POST', '/bookings', {
-      version: VERSION.bookings,
-      body: {
-        start,
-        eventTypeId: eventTypeId(),
-        attendee: {
-          name: String(name).trim().slice(0, 120),
-          email: attendeeEmail,
-          phoneNumber: String(phone).trim().slice(0, 40),
-          timeZone: SHOP_TZ,
-          language: language === 'es' ? 'es' : 'en',
+    // Retries once against a freshly resolved event type id if the one we hold
+    // has been deleted in the Cal dashboard — see api/_cal.js.
+    const result = await withEventType((eventTypeId) =>
+      cal('POST', '/bookings', {
+        version: VERSION.bookings,
+        body: {
+          start,
+          eventTypeId,
+          attendee: {
+            name: String(name).trim().slice(0, 120),
+            email: attendeeEmail,
+            phoneNumber: String(phone).trim().slice(0, 40),
+            timeZone: SHOP_TZ,
+            language: language === 'es' ? 'es' : 'en',
+          },
+          bookingFieldsResponses: {
+            title: vehicle ? `Install — ${String(vehicle).slice(0, 80)}` : 'Install request',
+            notes: detail,
+          },
+          metadata: {
+            source: 'starlights.nyc',
+            // Cal's metadata values are strings.
+            estimate: total != null ? String(total) : '',
+          },
         },
-        bookingFieldsResponses: {
-          title: vehicle ? `Install — ${String(vehicle).slice(0, 80)}` : 'Install request',
-          notes: detail,
-        },
-        metadata: {
-          source: 'starlights.nyc',
-          // Cal's metadata values are strings.
-          estimate: total != null ? String(total) : '',
-        },
-      },
-    });
+      }),
+    );
 
     if (!result.ok) {
       const text = (result.text || '').toLowerCase();

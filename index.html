@@ -7,12 +7,20 @@
     <link rel="apple-touch-icon" href="/logo.jpeg" />
     <meta name="theme-color" content="#000000" />
 
-    <title>STARLIGHTS.NYC — Starlight Ceilings, Suede Headliners & Ambient Lighting</title>
+    <!-- Title leads with the search people actually type ("starlight ceiling
+         NYC"), not with the brand — nobody searches for a shop they have not
+         heard of. Kept under ~60 characters so Google does not truncate it. -->
+    <title>Starlight Ceiling Installation NYC | STARLIGHTS.NYC</title>
     <meta
       name="description"
-      content="Premium automotive interior customization in New York. Fiber-optic starlight ceilings, suede headliner wraps and app-controlled Flow Series ambient lighting. Same-day turnaround available. 1-year warranty."
+      content="Fiber-optic starlight ceiling installation in New York City. Suede headliners, galaxy glass roofs and app-controlled ambient lighting. Same-day turnaround, 1-year warranty. Book online or text 347-613-2707."
     />
-    <link rel="canonical" href="https://starlights.nyc/" />
+    <!-- IMPORTANT: this must be the origin the site is actually served from.
+         It used to point at https://starlights.nyc/, which has no DNS at all,
+         so every crawler was being told the canonical copy of this page lives
+         somewhere that does not resolve. Change both this and og:url the day
+         the real domain is connected in Vercel. -->
+    <link rel="canonical" href="https://starlights-nyc.vercel.app/" />
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content="STARLIGHTS.NYC — Put the night sky in your ceiling." />
@@ -20,7 +28,7 @@
       property="og:description"
       content="Fiber-optic starlight ceilings, suede headliners and Flow Series ambient lighting. Installed in New York. Same-day turnaround available."
     />
-    <meta property="og:url" content="https://starlights.nyc/" />
+    <meta property="og:url" content="https://starlights-nyc.vercel.app/" />
     <meta property="og:image" content="https://starlights-nyc.vercel.app/media/photo-11.jpg" />
     <meta name="twitter:card" content="summary_large_image" />
 
@@ -31,20 +39,100 @@
       rel="stylesheet"
     />
 
+    <!--
+      Local-business markup. Two things are still missing and only the shop can
+      supply them, and both are what Google leans on hardest for local results:
+        1. "address" — a real street address. Without it this cannot qualify
+           for the local pack or a map listing.
+        2. "openingHoursSpecification" — the real opening hours.
+      The price list below is the live one from src/data/services.js; keep the
+      two in step when prices change.
+    -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "AutoRepair",
         "name": "STARLIGHTS.NYC",
-        "description": "Premium automotive interior customization: fiber-optic starlight ceilings, suede headliner wraps and app-controlled ambient lighting.",
-        "url": "https://starlights.nyc/",
+        "alternateName": "NYC Starlights",
+        "description": "Fiber-optic starlight ceiling installation in New York City. Suede headliner wraps, galaxy glass panoramic roofs and app-controlled Flow Series ambient lighting.",
+        "url": "https://starlights-nyc.vercel.app/",
+        "image": "https://starlights-nyc.vercel.app/media/photo-11.jpg",
+        "logo": "https://starlights-nyc.vercel.app/logo.jpeg",
         "telephone": "+1-347-613-2707",
         "email": "Nycstarlights@gmail.com",
-        "areaServed": "New York City",
+        "priceRange": "$275–$1,199",
+        "currenciesAccepted": "USD",
+        "areaServed": [
+          { "@type": "City", "name": "New York City" },
+          { "@type": "AdministrativeArea", "name": "Manhattan" },
+          { "@type": "AdministrativeArea", "name": "Brooklyn" },
+          { "@type": "AdministrativeArea", "name": "Queens" },
+          { "@type": "AdministrativeArea", "name": "The Bronx" },
+          { "@type": "AdministrativeArea", "name": "Long Island" }
+        ],
         "sameAs": [
           "https://instagram.com/starlights.nyc",
           "https://tiktok.com/@starlights.nyc"
-        ]
+        ],
+        "hasOfferCatalog": {
+          "@type": "OfferCatalog",
+          "name": "Installs",
+          "itemListElement": [
+            {
+              "@type": "Offer",
+              "priceCurrency": "USD",
+              "price": "719",
+              "itemOffered": { "@type": "Service", "name": "Starlight ceiling — 550 stars" }
+            },
+            {
+              "@type": "Offer",
+              "priceCurrency": "USD",
+              "price": "850",
+              "itemOffered": { "@type": "Service", "name": "Starlight ceiling — 800 stars" }
+            },
+            {
+              "@type": "Offer",
+              "priceCurrency": "USD",
+              "price": "1199",
+              "itemOffered": { "@type": "Service", "name": "Starlight ceiling — 1,100 stars" }
+            },
+            {
+              "@type": "Offer",
+              "priceCurrency": "USD",
+              "price": "275",
+              "itemOffered": { "@type": "Service", "name": "Shooting stars — 10-star set" }
+            },
+            {
+              "@type": "Offer",
+              "priceCurrency": "USD",
+              "price": "999",
+              "priceSpecification": {
+                "@type": "PriceSpecification",
+                "priceCurrency": "USD",
+                "minPrice": "999"
+              },
+              "itemOffered": { "@type": "Service", "name": "Galaxy glass panoramic roof" }
+            },
+            {
+              "@type": "Offer",
+              "priceCurrency": "USD",
+              "price": "400",
+              "itemOffered": { "@type": "Service", "name": "Suede headliner wrap — coupe" }
+            },
+            {
+              "@type": "Offer",
+              "priceCurrency": "USD",
+              "price": "175",
+              "itemOffered": { "@type": "Service", "name": "Sunroof panel in suede" }
+            },
+            {
+              "@type": "Offer",
+              "priceCurrency": "USD",
+              "price": "599",
+              "itemOffered": { "@type": "Service", "name": "Flow Series ambient lighting" }
+            }
+          ]
+        }
       }
     </script>
   </head>

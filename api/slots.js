@@ -1,4 +1,13 @@
-import { VERSION, cal, configured, eventTypeId, fail, shopDay, shopTime, SHOP_TZ } from './_cal.js';
+import {
+  SHOP_TZ,
+  VERSION,
+  cal,
+  configured,
+  fail,
+  shopDay,
+  shopTime,
+  withEventType,
+} from './_cal.js';
 
 /**
  * GET /api/slots?start=YYYY-MM-DD&end=YYYY-MM-DD
@@ -37,13 +46,17 @@ export default async function handler(req, res) {
   if (!(span >= 0 && span <= 62)) return fail(res, 400, 'bad_range');
 
   try {
-    const query = new URLSearchParams({
-      eventTypeId: String(eventTypeId()),
-      start,
-      end,
-      timeZone: SHOP_TZ,
+    // withEventType retries once against a freshly resolved id if the one we
+    // hold has been deleted in the Cal dashboard — see api/_cal.js.
+    const result = await withEventType((eventTypeId) => {
+      const query = new URLSearchParams({
+        eventTypeId: String(eventTypeId),
+        start,
+        end,
+        timeZone: SHOP_TZ,
+      });
+      return cal('GET', `/slots?${query}`, { version: VERSION.slots });
     });
-    const result = await cal('GET', `/slots?${query}`, { version: VERSION.slots });
 
     if (!result.ok) {
       // Log server-side for us; tell the browser nothing but that it failed.

@@ -1,0 +1,10 @@
+# STARLIGHTS.NYC
+# Everything is public — there is one page and a booking form.
+User-agent: *
+Allow: /
+
+# The serverless endpoints answer JSON to the booking form. Nothing to index,
+# and crawling them costs the shop's Cal.com rate limit for no benefit.
+Disallow: /api/
+
+Sitemap: https://starlights-nyc.vercel.app/sitemap.xml

@@ -86,11 +86,34 @@ export const HEADLINER = [
   },
 ];
 
+/**
+ * Pillars are no longer one price. B-pillars went to $100 on 2026-09-12 while
+ * A and C stayed at $50, so anything that renders them has to read each row's
+ * own price — a single "+$50 each" label would now undercharge on every B.
+ */
 export const PILLARS = [
   { id: 'pillar-a', price: 50, en: { name: 'A-Pillars' }, es: { name: 'Pilares A' } },
-  { id: 'pillar-b', price: 50, en: { name: 'B-Pillars' }, es: { name: 'Pilares B' } },
+  { id: 'pillar-b', price: 100, en: { name: 'B-Pillars' }, es: { name: 'Pilares B' } },
   { id: 'pillar-c', price: 50, en: { name: 'C-Pillars' }, es: { name: 'Pilares C' } },
 ];
+
+/**
+ * The sunroof panel, wrapped in suede to match the headliner. Priced as an
+ * add-on because the panel has to come out and go back in, which is the work
+ * the $175 covers.
+ */
+export const SUNROOF = {
+  id: 'suede-sunroof',
+  price: 175,
+  en: {
+    name: 'Sunroof panel in suede',
+    note: 'Wrapped to match the ceiling. Removal and refitting included.',
+  },
+  es: {
+    name: 'Panel del techo solar en gamuza',
+    note: 'Forrado a juego con el techo. Desmontaje y montaje incluidos.',
+  },
+};
 
 export const FLOW = {
   id: 'flow-series',
@@ -148,6 +171,7 @@ export const BOOKABLE = [
   { ...GALAXY_GLASS, group: 'starlight' },
   ...HEADLINER.map((s) => ({ ...s, group: 'headliner' })),
   ...PILLARS.map((s) => ({ ...s, group: 'headliner' })),
+  { ...SUNROOF, group: 'headliner' },
   { ...FLOW, group: 'flow' },
 ];
 

@@ -6,7 +6,7 @@ import Reveal, { RevealGroup, RevealItem } from '../components/Reveal';
 import Placeholder from '../components/Placeholder';
 import ScrollScale from '../components/ScrollScale';
 import CarProfile from '../components/CarProfile';
-import { HEADLINER, PILLARS } from '../data/services';
+import { HEADLINER, PILLARS, SUNROOF } from '../data/services';
 import { useLang } from '../i18n/LanguageContext';
 import { useBooking } from '../hooks/useBooking';
 import { money } from '../lib/format';
@@ -17,10 +17,10 @@ const PILLAR_IDS = PILLARS.map((p) => p.id);
 /**
  * Act four, on white: the technical half of the offer.
  *
- * Pillars are the upsell nobody understands from a price list — "+$50 each"
+ * Pillars are the upsell nobody understands from a price list — a bare "+$50"
  * means nothing until you can see which piece of the car it is. So the line
  * drawing lights up the exact pillar as you tick it, and the total updates
- * underneath. The diagram is the explanation; the copy just names the price.
+ * underneath. The diagram is the explanation; the button names the price.
  */
 export default function Headliner() {
   const { t, s, lang } = useLang();
@@ -28,18 +28,21 @@ export default function Headliner() {
 
   const [vehicle, setVehicle] = useState(HEADLINER[1].id);
   const [pillars, setPillars] = useState([]);
+  const [sunroof, setSunroof] = useState(false);
 
   const base = HEADLINER.find((v) => v.id === vehicle) || HEADLINER[1];
   // Sum each pillar's own price rather than multiplying by the first one's.
-  // They all happen to be $50 today, so this reads the same — but the day the
-  // shop charges more for C-pillars, the total would have quietly lied.
+  // That defensive choice paid off on 2026-09-12, when B-pillars went to $100
+  // and A and C stayed at $50: the total was already correct.
   const total = useMemo(
-    () =>
-      pillars.reduce((sum, id) => {
+    () => {
+      const withPillars = pillars.reduce((sum, id) => {
         const pillar = PILLARS.find((p) => p.id === id);
         return sum + (pillar ? pillar.price : 0);
-      }, base.price),
-    [base.price, pillars],
+      }, base.price);
+      return withPillars + (sunroof ? SUNROOF.price : 0);
+    },
+    [base.price, pillars, sunroof],
   );
 
   const togglePillar = (id) =>
@@ -160,10 +163,58 @@ export default function Headliner() {
                   <span className="t-fg text-[0.875rem] font-medium leading-tight">
                     {s(item).name}
                   </span>
+                  {/* Each button carries its own figure. They are no longer one
+                      price — B is $100 while A and C are $50 — so a single
+                      "+$50 each" label under the diagram would undercharge. */}
+                  <span className="tnum t-fg-muted text-[0.8125rem]">
+                    +{money(item.price, lang)}
+                  </span>
                 </button>
               );
             })}
           </div>
+
+          {/* The sunroof panel: its own add-on, because the panel has to come
+              out and go back in and that labour is what the price covers. */}
+          <Reveal delay={0.05} className="mt-9">
+            <span className="label-mono t-fg-faint">{t.headliner.sunroof}</span>
+          </Reveal>
+
+          <button
+            type="button"
+            onClick={() => setSunroof((on) => !on)}
+            aria-pressed={sunroof}
+            className="mt-4 flex w-full items-center justify-between gap-4 rounded-[var(--radius-field)] border px-5 py-4 text-left transition-all duration-500"
+            style={{
+              borderColor: sunroof ? 'rgb(var(--fg) / 0.55)' : 'rgb(var(--fg) / 0.14)',
+              backgroundColor: sunroof ? 'rgb(var(--fg) / 0.05)' : 'transparent',
+            }}
+          >
+            <span className="flex min-w-0 items-start gap-3">
+              <span
+                className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all duration-300"
+                style={{
+                  borderColor: sunroof ? 'transparent' : 'rgb(var(--fg) / 0.28)',
+                  backgroundColor: sunroof ? 'rgb(var(--fg))' : 'transparent',
+                }}
+              >
+                {sunroof && (
+                  <Check className="h-3 w-3" strokeWidth={3} style={{ color: 'rgb(var(--bg))' }} />
+                )}
+              </span>
+              <span className="min-w-0">
+                <span className="t-fg block text-[1.0625rem] font-medium">
+                  {s(SUNROOF).name}
+                </span>
+                <span className="t-fg-faint mt-0.5 block text-[0.8125rem]">
+                  {s(SUNROOF).note}
+                </span>
+              </span>
+            </span>
+            <span className="tnum t-fg shrink-0 text-[1.0625rem] font-medium">
+              +{money(SUNROOF.price, lang)}
+            </span>
+          </button>
 
           <Reveal delay={0.05}>
             <div className="t-line mt-9 border-t pt-6">
@@ -183,7 +234,10 @@ export default function Headliner() {
               <button
                 type="button"
                 onClick={() =>
-                  requestBooking([vehicle, ...pillars], [...VEHICLE_IDS, ...PILLAR_IDS])
+                  requestBooking(
+                    [vehicle, ...pillars, ...(sunroof ? [SUNROOF.id] : [])],
+                    [...VEHICLE_IDS, ...PILLAR_IDS, SUNROOF.id],
+                  )
                 }
                 className="btn-invert mt-6 w-full rounded-full px-7 py-4 text-[0.95rem] font-medium"
               >
