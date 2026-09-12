@@ -66,7 +66,11 @@ export default function Headliner() {
           <ScrollScale>
             <div className="t-surface t-line rounded-[var(--radius-panel)] border p-6 sm:p-8">
               <CarProfile vehicle={vehicle} active={pillars} />
-              <p className="label-mono t-fg-faint mt-4 text-center">
+              {/* text-balance, not a max-width in ch: this is mono with 0.24em
+                  tracking, and ch units ignore tracking, so a width cap
+                  measures far narrower than it looks and orphans the last
+                  word on a phone. */}
+              <p className="label-mono t-fg-faint mt-4 text-balance text-center">
                 {t.headliner.pillarNote}
               </p>
             </div>
