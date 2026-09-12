@@ -166,7 +166,7 @@ own English and Spanish copy next to its price, so a translation can never
 drift from the item it describes. Changing a price there updates the product
 cards, the configurators, the booking summary and the SMS/email body.
 
-Last confirmed with the shop **2026-09-05**.
+Last confirmed with the shop **2026-09-12**.
 
 | Item | Price |
 |---|---|
@@ -174,12 +174,26 @@ Last confirmed with the shop **2026-09-05**.
 | Starlight ceiling — 800 stars | $850 |
 | Starlight ceiling — 1,100 stars | $1,199 |
 | Shooting stars (10-star set) | $275 |
-| **Galaxy glass** | **from $999** |
+| Galaxy glass | from $999 |
 | Suede headliner — Coupe | $400 |
 | Suede headliner — Sedan | $600 |
 | Suede headliner — SUV | $700 |
-| A / B / C pillars | $50 each |
+| A-pillars | $50 |
+| **B-pillars** | **$100** |
+| C-pillars | $50 |
+| **Sunroof panel in suede** | **$175** |
 | Flow Series ambient lighting | $599 |
+
+Pillars stopped being one price on 2026-09-12. Anything that renders them reads
+each row's own `price`; there is no shared "+$50 each" label left, because one
+would undercharge every B-pillar.
+
+**Quoted but not yet published**, pending confirmation from the shop:
+
+| Item | What was said | What is unclear |
+|---|---|---|
+| Stars in the sunroof | `$-250` | Whether that means **+$250**. Not published. |
+| Hardtop convertible starlight | `from $1,599` · `750 stars` | Whether 750 stars are included at that price or are a separate line. Not published. |
 
 An item can set `from: true` in `services.js`. Every place a price is rendered
 checks the flag and prefixes it — the picker row, the booking summary, the

@@ -12,6 +12,7 @@ import {
   PILLARS,
   SHOOTING_STARS,
   STAR_KITS,
+  SUNROOF,
   findService,
   hasFromPrice,
 } from '../data/services';
@@ -370,7 +371,15 @@ function ServiceStep({ selected, onToggle, error }) {
 
   const groups = [
     { title: t.starlight.label, items: [...STAR_KITS, SHOOTING_STARS, GALAXY_GLASS], exclusive: KIT_IDS },
-    { title: t.headliner.label, items: [...HEADLINER, ...PILLARS], exclusive: VEHICLE_IDS },
+    // SUNROOF has to be listed here, not just in BOOKABLE. The headliner
+    // section can add it to the cart, and a row the customer cannot see is a
+    // charge they cannot untick — it would still reach the estimate and the
+    // message the shop receives.
+    {
+      title: t.headliner.label,
+      items: [...HEADLINER, ...PILLARS, SUNROOF],
+      exclusive: VEHICLE_IDS,
+    },
     { title: t.flow.label, items: [FLOW], exclusive: [] },
   ];
 
